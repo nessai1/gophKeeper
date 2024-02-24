@@ -3,7 +3,7 @@ package keeper
 import (
 	"bufio"
 	"fmt"
-	"github.com/nessai1/gophkeeper/internal/keeper/command"
+	"github.com/nessai1/gophkeeper/pkg/command"
 	"os"
 	"time"
 )

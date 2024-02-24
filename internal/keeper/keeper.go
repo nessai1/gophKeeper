@@ -47,5 +47,4 @@ func printGreetMessage(info applicationInfo) {
 	fmt.Printf("Welcome to the Keeper!\n\n")
 	fmt.Printf("Version: v%s\n", info.Version)
 	fmt.Printf("Build date: %s\n", info.BuildDate.String())
-	fmt.Printf("Print 'help' to get available commands\n")
 }

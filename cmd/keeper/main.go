@@ -6,8 +6,7 @@ import (
 )
 
 func main() {
-	err := keeper.Listen()
-	if err != nil {
-		fmt.Printf("Error while work keeper app: %s", err.Error())
+	if err := keeper.Listen(); err != nil {
+		fmt.Printf("Keeper was crashed: %s", err.Error())
 	}
 }

@@ -7,6 +7,6 @@ import (
 
 func main() {
 	if err := keeper.Listen(); err != nil {
-		fmt.Printf("Keeper was crashed: %s", err.Error())
+		fmt.Printf("\033[31mKeeper was crashed: %s\033[0m", err.Error())
 	}
 }

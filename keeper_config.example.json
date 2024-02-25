@@ -1,0 +1,5 @@
+{
+  "work_dir": "keeperData",
+  "mode": "dev",
+  "server": "localhost:7676"
+}

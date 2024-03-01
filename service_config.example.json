@@ -1,0 +1,11 @@
+{
+  "service_address": "0.0.0.0:7474",
+  "secret_token": "some_secret_token",
+
+  "s3": {
+    "url": "https://storage.yandexcloud.net",
+    "partition_id": "yc",
+    "signing_region": "ru-central1",
+    "bucket_key": "some_secret_key"
+  }
+}

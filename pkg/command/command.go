@@ -38,6 +38,7 @@ func ReadCommand(input Readable, output Writable) (*Command, error) {
 	}
 
 	strs := strings.Split(text, " ")
+	strs[len(strs)-1] = strings.Trim(strs[len(strs)-1], "\n")
 
 	return &Command{
 		Name: strings.TrimSpace(strs[0]),

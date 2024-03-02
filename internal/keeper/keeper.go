@@ -2,10 +2,10 @@ package keeper
 
 import (
 	"bufio"
-	"context"
 	"errors"
 	"fmt"
 	"github.com/nessai1/gophkeeper/internal/keeper/connector"
+	"github.com/nessai1/gophkeeper/internal/keeper/performer"
 	"github.com/nessai1/gophkeeper/internal/keeper/session"
 	"github.com/nessai1/gophkeeper/internal/logger"
 	"go.uber.org/zap"
@@ -39,14 +39,10 @@ func Listen() error {
 	return nil
 }
 
-type ServiceConnector interface {
-	Ping(ctx context.Context) (answer string, error error)
-}
-
 type Application struct {
 	config Config
 
-	connector ServiceConnector
+	connector connector.ServiceConnector
 
 	input  io.Reader
 	output io.Writer
@@ -123,6 +119,10 @@ func (a *Application) Run() error {
 
 	a.logger.Info("Application was started", zap.Bool("with_session", currentSession != nil))
 
+	var (
+		found       bool
+		requireExit bool
+	)
 	for {
 		_, err := a.output.Write([]byte("\n"))
 		if err != nil {
@@ -133,21 +133,62 @@ func (a *Application) Run() error {
 		if err != nil {
 			return fmt.Errorf("error while listen command by keeper: %w", err)
 		}
-
-		if cmd.Name == "exit" {
-			return nil
+		if cmd.Name == "" {
+			continue
 		}
 
-		if cmd.Name == "ping" {
-			answer, err := a.connector.Ping(context.TODO())
-			if err != nil {
-				a.output.Write([]byte("error while ping; see logs"))
-				a.logger.Error("error while ping service", zap.Error(err))
+		found = false
+		err = nil
+		for _, p := range performer.AvailablePerformers {
+			if p.GetName() == cmd.Name {
+				found = true
+
+				requireExit, err = p.Execute(
+					reader,
+					a.output,
+					a.connector,
+					a,
+					a.logger,
+					cmd.Args,
+				)
+			}
+		}
+		if !found {
+			a.output.Write([]byte(fmt.Sprintf("\033[31mCommand '%s' not found!\033[0m\n", cmd.Name)))
+		}
+
+		if err != nil {
+			a.output.Write([]byte(fmt.Sprintf("\033[31mError: %s\033[0m\n", err.Error())))
+		}
+
+		if requireExit {
+			if err == nil {
+				a.output.Write([]byte("Bye!\n"))
+
+				return nil
 			} else {
-				a.output.Write([]byte(fmt.Sprintf("Answer: %s", answer)))
+				a.output.Write([]byte("\033[31mThe application was interrupted by an error"))
+
+				return err
 			}
 		}
 	}
+}
+
+func (a *Application) getPerformers() {
+	if a.session != nil {
+
+	} else {
+
+	}
+}
+
+func (a *Application) SetSession(s *session.Session) {
+	a.session = s
+}
+
+func (a *Application) GetSession() *session.Session {
+	return a.session
 }
 
 func loadCurrentSession() *session.Session {

@@ -1,4 +1,4 @@
-package service
+package config
 
 import (
 	"bytes"
@@ -22,10 +22,16 @@ type S3Config struct {
 	URL           string `json:"url"`
 	PartitionID   string `json:"partition_id"`
 	SigningRegion string `json:"signing_region"`
-	BucketKey     string `json:"bucket_key"`
+
+	Credentials *S3Credentials `json:"credentials"`
 }
 
-func fetchConfig() (Config, error) {
+type S3Credentials struct {
+	AccessKeyID     string `json:"access_key_id"`
+	SecretAccessKey string `json:"secret_access_key"`
+}
+
+func FetchConfig() (Config, error) {
 	flagConfig := fetchFlagConfig()
 
 	fileConfig, err := fetchFileConfig(flagConfig.FileConfigPath)

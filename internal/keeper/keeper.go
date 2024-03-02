@@ -2,13 +2,16 @@ package keeper
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
+	"github.com/nessai1/gophkeeper/internal/keeper/connector"
 	"github.com/nessai1/gophkeeper/internal/keeper/session"
 	"github.com/nessai1/gophkeeper/internal/logger"
 	"go.uber.org/zap"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/nessai1/gophkeeper/pkg/command"
@@ -36,8 +39,14 @@ func Listen() error {
 	return nil
 }
 
+type ServiceConnector interface {
+	Ping(ctx context.Context) (answer string, error error)
+}
+
 type Application struct {
 	config Config
+
+	connector ServiceConnector
 
 	input  io.Reader
 	output io.Writer
@@ -57,7 +66,7 @@ func NewApplication(input io.Reader, output io.Writer, config Config) (*Applicat
 		return nil, fmt.Errorf("cannot create keeper data dir: %w", err)
 	}
 
-	logDir := config.WorkDir + string(os.PathSeparator) + "logs"
+	logDir := filepath.Join(config.WorkDir, "logs")
 	logFile, err := logger.OpenLogFile(logDir)
 	if err != nil {
 		return nil, fmt.Errorf("error while create log file to dir (%s) for new application: %w", logDir, err)
@@ -69,11 +78,17 @@ func NewApplication(input io.Reader, output io.Writer, config Config) (*Applicat
 		return nil, fmt.Errorf("error while build logger file %s with mode %s: %w", stat.Name(), config.Mode, err)
 	}
 
+	gRPCConnector, err := connector.CreateGRPCConnector(config.ServerAddr)
+	if err != nil {
+		return nil, fmt.Errorf("cannot connect to the external service: %w", err)
+	}
+
 	return &Application{
-		input:  input,
-		output: output,
-		config: config,
-		logger: loggerInstance,
+		input:     input,
+		output:    output,
+		config:    config,
+		logger:    loggerInstance,
+		connector: gRPCConnector,
 	}, nil
 }
 
@@ -83,7 +98,7 @@ func createKeeperDataDir(dir string) error {
 		return fmt.Errorf("cannot credate data dir: %w", err)
 	}
 
-	logsPath := dir + string(os.PathSeparator) + "logs"
+	logsPath := filepath.Join(dir, "logs")
 
 	err = os.Mkdir(logsPath, 0777)
 	if err != nil && !errors.As(err, &os.ErrExist) {
@@ -123,7 +138,15 @@ func (a *Application) Run() error {
 			return nil
 		}
 
-		fmt.Printf("Command: %s\t", cmd.Name)
+		if cmd.Name == "ping" {
+			answer, err := a.connector.Ping(context.TODO())
+			if err != nil {
+				a.output.Write([]byte("error while ping; see logs"))
+				a.logger.Error("error while ping service", zap.Error(err))
+			} else {
+				a.output.Write([]byte(fmt.Sprintf("Answer: %s", answer)))
+			}
+		}
 	}
 }
 

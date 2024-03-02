@@ -1,11 +1,20 @@
 {
-  "service_address": "0.0.0.0:7474",
+  "service_address": "0.0.0.0:7676",
   "secret_token": "some_secret_token",
+
+  "logger": {
+    "level": "dev",
+    "dir_path": "optional_value__path_to_log_dir"
+  },
 
   "s3": {
     "url": "https://storage.yandexcloud.net",
     "partition_id": "yc",
     "signing_region": "ru-central1",
-    "bucket_key": "some_secret_key"
+
+    "credentials": {
+      "access_key_id": "some_access_key",
+      "secret_access_key": "some_secret_key"
+    }
   }
 }

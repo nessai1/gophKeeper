@@ -3,11 +3,13 @@ package logger
 import (
 	"errors"
 	"fmt"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type ApplicationLevel string
@@ -43,7 +45,7 @@ func BuildLogger(level ApplicationLevel, target Target) (*zap.Logger, error) {
 }
 
 func OpenLogFile(logDir string) (*os.File, error) {
-	filePath := logDir + string(os.PathSeparator) + time.Now().Format("2006-01-02") + ".log"
+	filePath := filepath.Join(logDir, time.Now().Format("2006-01-02")+".log")
 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 
 	if err != nil {

@@ -14,7 +14,17 @@ message PingResponse {
   string error = 2;
 }
 
-service KeeperService {
-  rpc Ping(PingRequest) returns (PingResponse);
+message RegisterRequest {
+  string login = 1;
+  string password = 2;
 }
 
+message RegisterResponse {
+  string token = 1;
+  string error = 2;
+}
+
+service KeeperService {
+  rpc Ping(PingRequest) returns (PingResponse);
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+}

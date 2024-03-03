@@ -13,6 +13,8 @@ type Config struct {
 	Address     string `json:"service_address"`
 	SecretToken string `json:"secret_token"`
 
+	MetaStorageConfig *MetaStorageConfig `json:"meta_storage"`
+
 	S3Config *S3Config `json:"s3"`
 
 	FileConfigPath string
@@ -24,6 +26,18 @@ type S3Config struct {
 	SigningRegion string `json:"signing_region"`
 
 	Credentials *S3Credentials `json:"credentials"`
+}
+
+type MetaStorageConfig struct {
+	PSQLStorage *PSQLMetaStorageConfig `json:"postgres"`
+}
+
+type PSQLMetaStorageConfig struct {
+	Host     string `json:"host"`
+	Port     string `json:"port"`
+	User     string `json:"user"`
+	Password string `json:"password"`
+	DBName   string `json:"dbname"`
 }
 
 type S3Credentials struct {

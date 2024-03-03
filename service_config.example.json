@@ -7,6 +7,16 @@
     "dir_path": "optional_value__path_to_log_dir"
   },
 
+  "metastorage": {
+    "postgres": {
+      "host": "",
+      "port": "",
+      "user": "",
+      "password": "",
+      "dbname": ""
+    }
+  },
+
   "s3": {
     "url": "https://storage.yandexcloud.net",
     "partition_id": "yc",

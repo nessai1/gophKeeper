@@ -3,8 +3,10 @@ package command
 import (
 	"bufio"
 	"fmt"
+	"golang.org/x/term"
 	"os"
 	"strings"
+	"syscall"
 )
 
 // Command info about command
@@ -34,8 +36,24 @@ func ReadCommand() (*Command, error) {
 	}, nil
 }
 
-//
-//func AskSecret(output Writable, welcomeText string) {
-//	term.ReadPassword()
-//	term.NewTerminal(output)
-//}
+func AskText(prompt string) (string, error) {
+	fmt.Printf("%s: ", prompt)
+	r := bufio.NewReader(os.Stdin)
+	val, err := r.ReadString('\n')
+	if err != nil {
+		return "", fmt.Errorf("cannot ask text: %w", err)
+	}
+
+	return strings.Trim(val, "\n"), nil
+}
+
+func AskSecret(prompt string) (string, error) {
+	fmt.Printf("%s: ", prompt)
+	secret, err := term.ReadPassword(syscall.Stdin)
+	if err != nil {
+		return "", fmt.Errorf("cannot read secret: %w", err)
+	}
+	fmt.Printf("\n")
+
+	return string(secret), err
+}

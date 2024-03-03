@@ -3,7 +3,6 @@ package performer
 import (
 	"github.com/nessai1/gophkeeper/internal/keeper/connector"
 	"github.com/nessai1/gophkeeper/internal/keeper/session"
-	"github.com/nessai1/gophkeeper/pkg/command"
 	"go.uber.org/zap"
 )
 
@@ -20,8 +19,6 @@ type Performer interface {
 
 	// Execute execute command (God please forgive me for this....)
 	Execute(
-		input command.Readable,
-		output command.Writable,
 		conn connector.ServiceConnector,
 		sessional Sessional,
 		logger *zap.Logger,
@@ -33,4 +30,5 @@ var AvailablePerformers = []Performer{
 	Help{},
 	Exit{},
 	Ping{},
+	Register{},
 }

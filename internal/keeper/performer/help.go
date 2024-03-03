@@ -3,7 +3,6 @@ package performer
 import (
 	"fmt"
 	"github.com/nessai1/gophkeeper/internal/keeper/connector"
-	"github.com/nessai1/gophkeeper/pkg/command"
 	"go.uber.org/zap"
 )
 
@@ -26,15 +25,15 @@ func (p Help) GetDetailDescription() string {
 	return "Get common help information and list of available commands\nIf has argument [command] - returns detail description about concrete command"
 }
 
-func (p Help) Execute(input command.Readable, output command.Writable, conn connector.ServiceConnector, sessional Sessional, logger *zap.Logger, args []string) (requireExit bool, err error) {
+func (p Help) Execute(_ connector.ServiceConnector, _ Sessional, _ *zap.Logger, args []string) (requireExit bool, err error) {
 	if len(args) > 2 {
 		return false, fmt.Errorf("command has too many arguments (%d, requires 1)", len(args)-1)
 	}
 
 	if len(args) == 1 {
-		p.printCommandsList(output)
+		p.printCommandsList()
 	} else {
-		err := p.printCommandDetails(output, args[1])
+		err := p.printCommandDetails(args[1])
 		if err != nil {
 			return false, fmt.Errorf("command details error: %w", err)
 		}
@@ -43,17 +42,17 @@ func (p Help) Execute(input command.Readable, output command.Writable, conn conn
 	return false, nil
 }
 
-func (p Help) printCommandsList(output command.Writable) {
-	output.Write([]byte("List of commands\n--------\n"))
+func (p Help) printCommandsList() {
+	fmt.Print("List of commands\n--------\n")
 	for _, val := range AvailablePerformers {
-		output.Write([]byte(fmt.Sprintf("%s\t%s\n", val.GetStruct(), val.GetDescription())))
+		fmt.Printf("%s\t%s\n", val.GetStruct(), val.GetDescription())
 	}
 }
 
-func (p Help) printCommandDetails(output command.Writable, commandName string) error {
+func (p Help) printCommandDetails(commandName string) error {
 	for _, val := range AvailablePerformers {
 		if val.GetName() == commandName {
-			output.Write([]byte(fmt.Sprintf("Command: %s\nPattern: %s\n\n%s\n", val.GetName(), val.GetStruct(), val.GetDetailDescription())))
+			fmt.Printf("Command: %s\nPattern: %s\n\n%s\n", val.GetName(), val.GetStruct(), val.GetDetailDescription())
 			return nil
 		}
 	}

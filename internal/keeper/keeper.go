@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"github.com/nessai1/gophkeeper/internal/keeper/connector"
@@ -9,7 +8,6 @@ import (
 	"github.com/nessai1/gophkeeper/internal/keeper/session"
 	"github.com/nessai1/gophkeeper/internal/logger"
 	"go.uber.org/zap"
-	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -18,16 +16,14 @@ import (
 )
 
 func Listen() error {
-	writer := os.Stdout
-
-	printGreetMessage(writer, applicationInfo{Version: "0.0.1", BuildDate: time.Now()})
+	printGreetMessage(applicationInfo{Version: "0.0.1", BuildDate: time.Now()})
 
 	cfg, err := fetchConfig()
 	if err != nil {
 		return fmt.Errorf("cannot start listen application: %w", err)
 	}
 
-	app, err := NewApplication(writer, os.Stdin, cfg)
+	app, err := NewApplication(cfg)
 	if err != nil {
 		return fmt.Errorf("cannot start listen application: %w", err)
 	}
@@ -44,9 +40,6 @@ type Application struct {
 
 	connector connector.ServiceConnector
 
-	input  io.Reader
-	output io.Writer
-
 	session *session.Session
 
 	logger *zap.Logger
@@ -55,7 +48,7 @@ type Application struct {
 type WorkDir struct {
 }
 
-func NewApplication(input io.Reader, output io.Writer, config Config) (*Application, error) {
+func NewApplication(config Config) (*Application, error) {
 
 	err := createKeeperDataDir(config.WorkDir)
 	if err != nil {
@@ -80,8 +73,6 @@ func NewApplication(input io.Reader, output io.Writer, config Config) (*Applicat
 	}
 
 	return &Application{
-		input:     input,
-		output:    output,
 		config:    config,
 		logger:    loggerInstance,
 		connector: gRPCConnector,
@@ -105,17 +96,16 @@ func createKeeperDataDir(dir string) error {
 }
 
 func (a *Application) Run() error {
-	reader := bufio.NewReader(os.Stdin)
-
 	currentSession := loadCurrentSession()
 	if currentSession != nil {
-		fmt.Fprintf(a.output, "\033[32mYou are authorized as '%s'!\033[0m", currentSession.Login)
+		fmt.Printf("\033[32mYou are authorized as '%s'!\033[0m", currentSession.Login)
 	} else {
 		if a.config.ServerAddr == "" {
 			return fmt.Errorf("cannot start application without active session then server addr is empty")
 		}
-		fmt.Fprintf(a.output, "\033[33mYou are not authorized. Use 'login' / 'register' to authorize in service\033[0m")
+		fmt.Printf("\033[33mYou are not authorized. Use 'login' / 'register' to authorize in service\033[0m")
 	}
+	fmt.Println()
 
 	a.logger.Info("Application was started", zap.Bool("with_session", currentSession != nil))
 
@@ -124,12 +114,7 @@ func (a *Application) Run() error {
 		requireExit bool
 	)
 	for {
-		_, err := a.output.Write([]byte("\n"))
-		if err != nil {
-			return err
-		}
-
-		cmd, err := command.ReadCommand(reader, a.output)
+		cmd, err := command.ReadCommand()
 		if err != nil {
 			return fmt.Errorf("error while listen command by keeper: %w", err)
 		}
@@ -144,8 +129,6 @@ func (a *Application) Run() error {
 				found = true
 
 				requireExit, err = p.Execute(
-					reader,
-					a.output,
 					a.connector,
 					a,
 					a.logger,
@@ -154,20 +137,20 @@ func (a *Application) Run() error {
 			}
 		}
 		if !found {
-			a.output.Write([]byte(fmt.Sprintf("\033[31mCommand '%s' not found!\033[0m\n", cmd.Name)))
+			fmt.Printf("\033[31mCommand '%s' not found!\033[0m\n", cmd.Name)
 		}
 
 		if err != nil {
-			a.output.Write([]byte(fmt.Sprintf("\033[31mError: %s\033[0m\n", err.Error())))
+			fmt.Printf("\033[31mError: %s\033[0m\n", err.Error())
 		}
 
 		if requireExit {
 			if err == nil {
-				a.output.Write([]byte("Bye!\n"))
+				fmt.Printf("Bye!\n")
 
 				return nil
 			} else {
-				a.output.Write([]byte("\033[31mThe application was interrupted by an error"))
+				fmt.Printf("\033[31mThe application was interrupted by an error")
 
 				return err
 			}
@@ -209,9 +192,9 @@ const greetMsg = `
                       |_|
 `
 
-func printGreetMessage(target io.Writer, info applicationInfo) {
-	fmt.Fprintf(target, "\033[34m"+greetMsg+"\033[0m")
-	fmt.Fprintf(target, "Welcome to the Keeper!\n\n")
-	fmt.Fprintf(target, "Version: v%s\n", info.Version)
-	fmt.Fprintf(target, "Build date: %s\n", info.BuildDate.String())
+func printGreetMessage(info applicationInfo) {
+	fmt.Printf("\033[34m" + greetMsg + "\033[0m")
+	fmt.Printf("Welcome to the Keeper!\n\n")
+	fmt.Printf("Version: v%s\n", info.Version)
+	fmt.Printf("Build date: %s\n", info.BuildDate.String())
 }

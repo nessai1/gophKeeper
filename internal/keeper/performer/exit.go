@@ -2,7 +2,6 @@ package performer
 
 import (
 	"github.com/nessai1/gophkeeper/internal/keeper/connector"
-	"github.com/nessai1/gophkeeper/pkg/command"
 	"go.uber.org/zap"
 )
 
@@ -25,6 +24,6 @@ func (p Exit) GetDetailDescription() string {
 	return "Exits the application, that's all :)"
 }
 
-func (p Exit) Execute(input command.Readable, output command.Writable, conn connector.ServiceConnector, sessional Sessional, logger *zap.Logger, args []string) (requireExit bool, err error) {
+func (p Exit) Execute(_ connector.ServiceConnector, _ Sessional, _ *zap.Logger, _ []string) (requireExit bool, err error) {
 	return true, nil
 }

@@ -1,21 +1,11 @@
 package command
 
 import (
+	"bufio"
 	"fmt"
-	"io"
+	"os"
 	"strings"
 )
-
-// Readable interface for read data from source, usually its os.Stdout wrapper, like bufio.Reader
-type Readable interface {
-	io.Reader
-	ReadString(delim byte) (string, error)
-}
-
-// Writable interface for write commands help info, like anchors or welcome messages (ex. 'Write password: ')
-type Writable interface {
-	io.Writer
-}
 
 // Command info about command
 type Command struct {
@@ -26,13 +16,11 @@ type Command struct {
 }
 
 // ReadCommand prompts user to enter a command to input, writes command anchor to output
-func ReadCommand(input Readable, output Writable) (*Command, error) {
-	_, err := output.Write([]byte("> "))
-	if err != nil {
-		return nil, fmt.Errorf("cannot write command anchor: %w", err)
-	}
+func ReadCommand() (*Command, error) {
+	fmt.Print("> ")
 
-	text, err := input.ReadString('\n')
+	reader := bufio.NewReader(os.Stdin)
+	text, err := reader.ReadString('\n')
 	if err != nil {
 		return nil, fmt.Errorf("cannot read command: %w", err)
 	}
@@ -45,3 +33,9 @@ func ReadCommand(input Readable, output Writable) (*Command, error) {
 		Args: strs,
 	}, nil
 }
+
+//
+//func AskSecret(output Writable, welcomeText string) {
+//	term.ReadPassword()
+//	term.NewTerminal(output)
+//}

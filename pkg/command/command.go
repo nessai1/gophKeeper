@@ -49,7 +49,10 @@ func AskText(prompt string) (string, error) {
 
 func AskSecret(prompt string) (string, error) {
 	fmt.Printf("%s: ", prompt)
-	secret, err := term.ReadPassword(syscall.Stdin)
+
+	// int convert for windows syscall support
+	secret, err := term.ReadPassword(int(syscall.Stdin))
+
 	if err != nil {
 		return "", fmt.Errorf("cannot read secret: %w", err)
 	}

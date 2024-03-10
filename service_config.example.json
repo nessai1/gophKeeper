@@ -7,7 +7,7 @@
     "dir_path": "optional_value__path_to_log_dir"
   },
 
-  "metastorage": {
+  "plain_storage": {
     "postgres": {
       "host": "",
       "port": "",

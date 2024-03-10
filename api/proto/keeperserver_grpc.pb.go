@@ -19,8 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	KeeperService_Ping_FullMethodName     = "/keeperservice.grpc.KeeperService/Ping"
-	KeeperService_Register_FullMethodName = "/keeperservice.grpc.KeeperService/Register"
+	KeeperService_Ping_FullMethodName              = "/keeperservice.grpc.KeeperService/Ping"
+	KeeperService_Register_FullMethodName          = "/keeperservice.grpc.KeeperService/Register"
+	KeeperService_Login_FullMethodName             = "/keeperservice.grpc.KeeperService/Login"
+	KeeperService_UploadMediaSecret_FullMethodName = "/keeperservice.grpc.KeeperService/UploadMediaSecret"
 )
 
 // KeeperServiceClient is the client API for KeeperService service.
@@ -28,7 +30,9 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type KeeperServiceClient interface {
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
-	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
+	Register(ctx context.Context, in *UserCredentialsRequest, opts ...grpc.CallOption) (*UserCredentialsResponse, error)
+	Login(ctx context.Context, in *UserCredentialsRequest, opts ...grpc.CallOption) (*UserCredentialsResponse, error)
+	UploadMediaSecret(ctx context.Context, opts ...grpc.CallOption) (KeeperService_UploadMediaSecretClient, error)
 }
 
 type keeperServiceClient struct {
@@ -48,8 +52,8 @@ func (c *keeperServiceClient) Ping(ctx context.Context, in *PingRequest, opts ..
 	return out, nil
 }
 
-func (c *keeperServiceClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
-	out := new(RegisterResponse)
+func (c *keeperServiceClient) Register(ctx context.Context, in *UserCredentialsRequest, opts ...grpc.CallOption) (*UserCredentialsResponse, error) {
+	out := new(UserCredentialsResponse)
 	err := c.cc.Invoke(ctx, KeeperService_Register_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -57,12 +61,57 @@ func (c *keeperServiceClient) Register(ctx context.Context, in *RegisterRequest,
 	return out, nil
 }
 
+func (c *keeperServiceClient) Login(ctx context.Context, in *UserCredentialsRequest, opts ...grpc.CallOption) (*UserCredentialsResponse, error) {
+	out := new(UserCredentialsResponse)
+	err := c.cc.Invoke(ctx, KeeperService_Login_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keeperServiceClient) UploadMediaSecret(ctx context.Context, opts ...grpc.CallOption) (KeeperService_UploadMediaSecretClient, error) {
+	stream, err := c.cc.NewStream(ctx, &KeeperService_ServiceDesc.Streams[0], KeeperService_UploadMediaSecret_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &keeperServiceUploadMediaSecretClient{stream}
+	return x, nil
+}
+
+type KeeperService_UploadMediaSecretClient interface {
+	Send(*UploadMediaSecretRequest) error
+	CloseAndRecv() (*UploadMediaSecretResponse, error)
+	grpc.ClientStream
+}
+
+type keeperServiceUploadMediaSecretClient struct {
+	grpc.ClientStream
+}
+
+func (x *keeperServiceUploadMediaSecretClient) Send(m *UploadMediaSecretRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *keeperServiceUploadMediaSecretClient) CloseAndRecv() (*UploadMediaSecretResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(UploadMediaSecretResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // KeeperServiceServer is the server API for KeeperService service.
 // All implementations must embed UnimplementedKeeperServiceServer
 // for forward compatibility
 type KeeperServiceServer interface {
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
-	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
+	Register(context.Context, *UserCredentialsRequest) (*UserCredentialsResponse, error)
+	Login(context.Context, *UserCredentialsRequest) (*UserCredentialsResponse, error)
+	UploadMediaSecret(KeeperService_UploadMediaSecretServer) error
 	mustEmbedUnimplementedKeeperServiceServer()
 }
 
@@ -73,8 +122,14 @@ type UnimplementedKeeperServiceServer struct {
 func (UnimplementedKeeperServiceServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedKeeperServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
+func (UnimplementedKeeperServiceServer) Register(context.Context, *UserCredentialsRequest) (*UserCredentialsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedKeeperServiceServer) Login(context.Context, *UserCredentialsRequest) (*UserCredentialsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedKeeperServiceServer) UploadMediaSecret(KeeperService_UploadMediaSecretServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadMediaSecret not implemented")
 }
 func (UnimplementedKeeperServiceServer) mustEmbedUnimplementedKeeperServiceServer() {}
 
@@ -108,7 +163,7 @@ func _KeeperService_Ping_Handler(srv interface{}, ctx context.Context, dec func(
 }
 
 func _KeeperService_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegisterRequest)
+	in := new(UserCredentialsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -120,9 +175,53 @@ func _KeeperService_Register_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: KeeperService_Register_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KeeperServiceServer).Register(ctx, req.(*RegisterRequest))
+		return srv.(KeeperServiceServer).Register(ctx, req.(*UserCredentialsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _KeeperService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCredentialsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeeperServiceServer).Login(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeeperService_Login_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeeperServiceServer).Login(ctx, req.(*UserCredentialsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KeeperService_UploadMediaSecret_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(KeeperServiceServer).UploadMediaSecret(&keeperServiceUploadMediaSecretServer{stream})
+}
+
+type KeeperService_UploadMediaSecretServer interface {
+	SendAndClose(*UploadMediaSecretResponse) error
+	Recv() (*UploadMediaSecretRequest, error)
+	grpc.ServerStream
+}
+
+type keeperServiceUploadMediaSecretServer struct {
+	grpc.ServerStream
+}
+
+func (x *keeperServiceUploadMediaSecretServer) SendAndClose(m *UploadMediaSecretResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *keeperServiceUploadMediaSecretServer) Recv() (*UploadMediaSecretRequest, error) {
+	m := new(UploadMediaSecretRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // KeeperService_ServiceDesc is the grpc.ServiceDesc for KeeperService service.
@@ -140,7 +239,17 @@ var KeeperService_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Register",
 			Handler:    _KeeperService_Register_Handler,
 		},
+		{
+			MethodName: "Login",
+			Handler:    _KeeperService_Login_Handler,
+		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "UploadMediaSecret",
+			Handler:       _KeeperService_UploadMediaSecret_Handler,
+			ClientStreams: true,
+		},
+	},
 	Metadata: "api/proto/keeperserver.proto",
 }

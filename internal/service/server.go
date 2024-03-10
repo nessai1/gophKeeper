@@ -1,8 +1,9 @@
 package service
 
 import (
-	"context"
 	"github.com/nessai1/gophkeeper/internal/service/config"
+	"github.com/nessai1/gophkeeper/internal/service/mediastorage"
+	"github.com/nessai1/gophkeeper/internal/service/plainstorage"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"log"
@@ -10,11 +11,16 @@ import (
 	"os"
 
 	"github.com/nessai1/gophkeeper/internal/logger"
-	"github.com/nessai1/gophkeeper/internal/service/storage"
-	"github.com/nessai1/gophkeeper/internal/service/storage/s3storage"
+	"github.com/nessai1/gophkeeper/internal/service/mediastorage/s3storage"
 
 	pb "github.com/nessai1/gophkeeper/api/proto"
 )
+
+var unauthorizedMethods = []string{
+	pb.KeeperService_Ping_FullMethodName,
+	pb.KeeperService_Register_FullMethodName,
+	pb.KeeperService_Login_FullMethodName,
+}
 
 func Run() {
 	log.Println("Starting keeper service")
@@ -29,11 +35,12 @@ func Run() {
 		log.Fatalf("Cannot build logger: %s", err.Error())
 	}
 
+	log.Println("Load media storage (s3)")
 	if c.S3Config == nil {
 		log.Fatalf("Cannot find S3 config fields")
 	}
 
-	s, err := s3storage.NewStorage(*c.S3Config, l)
+	ms, err := s3storage.NewStorage(*c.S3Config, l)
 
 	if err != nil {
 		log.Fatalf("Cannot build S3 storage")
@@ -44,12 +51,24 @@ func Run() {
 		log.Fatalf("Cannot listen '%s' address for service: %s", c.Address, err)
 	}
 
-	server := Server{
-		storage: s,
-		logger:  l,
-		config:  c,
+	if c.PlainStorageConfig == nil || c.PlainStorageConfig.PSQLStorage == nil {
+		log.Fatalf("No one plain storage configured!")
 	}
-	gRPCServer := grpc.NewServer()
+
+	log.Println("Load plain storage (postgres)")
+
+	s, err := plainstorage.NewPSQLPlainStorage(*c.PlainStorageConfig.PSQLStorage)
+	if err != nil {
+		log.Fatalf("Cannot build plain psql storage: %s", err.Error())
+	}
+
+	server := Server{
+		mediaStorage: ms,
+		plainStorage: s,
+		logger:       l,
+		config:       c,
+	}
+	gRPCServer := grpc.NewServer(grpc.UnaryInterceptor(server.unaryAuthInterceptor), grpc.StreamInterceptor(server.streamAuthInterceptor))
 	pb.RegisterKeeperServiceServer(gRPCServer, &server)
 
 	log.Printf("Service started at %s", c.Address)
@@ -59,16 +78,10 @@ func Run() {
 }
 
 type Server struct {
-	storage storage.Storage
-	logger  *zap.Logger
-	config  config.Config
+	plainStorage plainstorage.PlainStorage
+	mediaStorage mediastorage.MediaStorage
+	logger       *zap.Logger
+	config       config.Config
 
 	pb.UnimplementedKeeperServiceServer
-}
-
-func (s *Server) Ping(ctx context.Context, request *pb.PingRequest) (*pb.PingResponse, error) {
-	s.logger.Info("Got ping")
-	resp := pb.PingResponse{}
-	resp.Answer = "pong!"
-	return &resp, nil
 }

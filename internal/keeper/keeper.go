@@ -96,8 +96,13 @@ func createKeeperDataDir(dir string) error {
 }
 
 func (a *Application) Run() error {
-	currentSession := loadCurrentSession()
+	currentSession, err := session.LoadLocalSession(a.config.WorkDir)
+	if err != nil {
+		a.logger.Error("cannot load local session for user", zap.Error(err))
+	}
+
 	if currentSession != nil {
+		a.SetSession(currentSession)
 		fmt.Printf("\033[32mYou are authorized as '%s'!\033[0m", currentSession.Login)
 	} else {
 		if a.config.ServerAddr == "" {
@@ -145,6 +150,12 @@ func (a *Application) Run() error {
 		}
 
 		if requireExit {
+			if a.GetSession() != nil {
+				saveErr := session.SaveLocalSession(a.config.WorkDir, *a.GetSession())
+				if saveErr != nil {
+					a.logger.Error("Error while save local session", zap.Error(saveErr))
+				}
+			}
 			if err == nil {
 				fmt.Printf("Bye!\n")
 
@@ -172,10 +183,6 @@ func (a *Application) SetSession(s *session.Session) {
 
 func (a *Application) GetSession() *session.Session {
 	return a.session
-}
-
-func loadCurrentSession() *session.Session {
-	return nil
 }
 
 type applicationInfo struct {

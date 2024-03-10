@@ -31,4 +31,6 @@ var AvailablePerformers = []Performer{
 	Exit{},
 	Ping{},
 	Register{},
+	Login{},
+	Logout{},
 }

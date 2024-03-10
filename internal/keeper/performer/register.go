@@ -1,10 +1,13 @@
 package performer
 
 import (
+	"context"
 	"fmt"
 	"github.com/nessai1/gophkeeper/internal/keeper/connector"
+	"github.com/nessai1/gophkeeper/internal/keeper/session"
 	"github.com/nessai1/gophkeeper/pkg/command"
 	"go.uber.org/zap"
+	"strings"
 )
 
 type Register struct {
@@ -26,7 +29,7 @@ func (p Register) GetDetailDescription() string {
 	return "Register in external service.\nFor registration client need has unauthorized session before this command, use 'logout' command for this"
 }
 
-func (p Register) Execute(_ connector.ServiceConnector, sessional Sessional, _ *zap.Logger, _ []string) (requireExit bool, err error) {
+func (p Register) Execute(conn connector.ServiceConnector, sessional Sessional, logger *zap.Logger, _ []string) (requireExit bool, err error) {
 	if sessional.GetSession() != nil {
 		return false, fmt.Errorf("you need to unauthorize by 'logout' before")
 	}
@@ -36,9 +39,17 @@ func (p Register) Execute(_ connector.ServiceConnector, sessional Sessional, _ *
 		return false, fmt.Errorf("cannot read login for register: %w", err)
 	}
 
+	if strings.TrimSpace(login) == "" {
+		return false, fmt.Errorf("login can't be empty")
+	}
+
 	password, err := command.AskSecret("Enter password")
 	if err != nil {
 		return false, fmt.Errorf("cannot read password for register: %w", err)
+	}
+
+	if strings.TrimSpace(password) == "" {
+		return false, fmt.Errorf("password can't be empty")
 	}
 
 	passwordRep, err := command.AskSecret("Repeat password")
@@ -50,7 +61,15 @@ func (p Register) Execute(_ connector.ServiceConnector, sessional Sessional, _ *
 		return false, fmt.Errorf("passwords are not equal")
 	}
 
-	fmt.Printf("Login: %s \t Password: %s\n", login, password)
+	t, err := conn.Register(context.TODO(), login, password)
+	if err != nil {
+		logger.Error("Got service error while register", zap.Error(err))
+		return false, fmt.Errorf("error while execute register command: %w", err)
+	}
+
+	s := session.NewSession(login, password, t)
+	sessional.SetSession(&s)
+	fmt.Printf("\033[32mSuccessful register and login as %s!\033[0m\n", s.Login)
 
 	return false, nil
 }

@@ -13,11 +13,13 @@ type Config struct {
 	Address     string `json:"service_address"`
 	SecretToken string `json:"secret_token"`
 
-	MetaStorageConfig *MetaStorageConfig `json:"meta_storage"`
+	PlainStorageConfig *PlainStorageConfig `json:"plain_storage"`
 
 	S3Config *S3Config `json:"s3"`
 
 	FileConfigPath string
+
+	SignSecret string
 }
 
 type S3Config struct {
@@ -28,11 +30,11 @@ type S3Config struct {
 	Credentials *S3Credentials `json:"credentials"`
 }
 
-type MetaStorageConfig struct {
-	PSQLStorage *PSQLMetaStorageConfig `json:"postgres"`
+type PlainStorageConfig struct {
+	PSQLStorage *PSQLPlainStorageConfig `json:"postgres"`
 }
 
-type PSQLMetaStorageConfig struct {
+type PSQLPlainStorageConfig struct {
 	Host     string `json:"host"`
 	Port     string `json:"port"`
 	User     string `json:"user"`

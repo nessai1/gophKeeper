@@ -20,6 +20,110 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type SecretType int32
+
+const (
+	SecretType_LOGIN_PASSWORD SecretType = 0
+	SecretType_CREDIT_CARD    SecretType = 1
+	SecretType_TEXT           SecretType = 2
+	SecretType_MEDIA          SecretType = 3
+)
+
+// Enum value maps for SecretType.
+var (
+	SecretType_name = map[int32]string{
+		0: "LOGIN_PASSWORD",
+		1: "CREDIT_CARD",
+		2: "TEXT",
+		3: "MEDIA",
+	}
+	SecretType_value = map[string]int32{
+		"LOGIN_PASSWORD": 0,
+		"CREDIT_CARD":    1,
+		"TEXT":           2,
+		"MEDIA":          3,
+	}
+)
+
+func (x SecretType) Enum() *SecretType {
+	p := new(SecretType)
+	*p = x
+	return p
+}
+
+func (x SecretType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SecretType) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_proto_keeperserver_proto_enumTypes[0].Descriptor()
+}
+
+func (SecretType) Type() protoreflect.EnumType {
+	return &file_api_proto_keeperserver_proto_enumTypes[0]
+}
+
+func (x SecretType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SecretType.Descriptor instead.
+func (SecretType) EnumDescriptor() ([]byte, []int) {
+	return file_api_proto_keeperserver_proto_rawDescGZIP(), []int{0}
+}
+
+type UploadStatus int32
+
+const (
+	UploadStatus_PENDING     UploadStatus = 0
+	UploadStatus_IN_PROGRESS UploadStatus = 1
+	UploadStatus_SUCCESS     UploadStatus = 2
+	UploadStatus_FAILED      UploadStatus = 3
+)
+
+// Enum value maps for UploadStatus.
+var (
+	UploadStatus_name = map[int32]string{
+		0: "PENDING",
+		1: "IN_PROGRESS",
+		2: "SUCCESS",
+		3: "FAILED",
+	}
+	UploadStatus_value = map[string]int32{
+		"PENDING":     0,
+		"IN_PROGRESS": 1,
+		"SUCCESS":     2,
+		"FAILED":      3,
+	}
+)
+
+func (x UploadStatus) Enum() *UploadStatus {
+	p := new(UploadStatus)
+	*p = x
+	return p
+}
+
+func (x UploadStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (UploadStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_proto_keeperserver_proto_enumTypes[1].Descriptor()
+}
+
+func (UploadStatus) Type() protoreflect.EnumType {
+	return &file_api_proto_keeperserver_proto_enumTypes[1]
+}
+
+func (x UploadStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use UploadStatus.Descriptor instead.
+func (UploadStatus) EnumDescriptor() ([]byte, []int) {
+	return file_api_proto_keeperserver_proto_rawDescGZIP(), []int{1}
+}
+
 type PingRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -122,7 +226,7 @@ func (x *PingResponse) GetError() string {
 	return ""
 }
 
-type RegisterRequest struct {
+type UserCredentialsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -131,8 +235,8 @@ type RegisterRequest struct {
 	Password string `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 }
 
-func (x *RegisterRequest) Reset() {
-	*x = RegisterRequest{}
+func (x *UserCredentialsRequest) Reset() {
+	*x = UserCredentialsRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_api_proto_keeperserver_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -140,13 +244,13 @@ func (x *RegisterRequest) Reset() {
 	}
 }
 
-func (x *RegisterRequest) String() string {
+func (x *UserCredentialsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RegisterRequest) ProtoMessage() {}
+func (*UserCredentialsRequest) ProtoMessage() {}
 
-func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
+func (x *UserCredentialsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_keeperserver_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -158,26 +262,26 @@ func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
-func (*RegisterRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserCredentialsRequest.ProtoReflect.Descriptor instead.
+func (*UserCredentialsRequest) Descriptor() ([]byte, []int) {
 	return file_api_proto_keeperserver_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *RegisterRequest) GetLogin() string {
+func (x *UserCredentialsRequest) GetLogin() string {
 	if x != nil {
 		return x.Login
 	}
 	return ""
 }
 
-func (x *RegisterRequest) GetPassword() string {
+func (x *UserCredentialsRequest) GetPassword() string {
 	if x != nil {
 		return x.Password
 	}
 	return ""
 }
 
-type RegisterResponse struct {
+type UserCredentialsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -186,8 +290,8 @@ type RegisterResponse struct {
 	Error string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 }
 
-func (x *RegisterResponse) Reset() {
-	*x = RegisterResponse{}
+func (x *UserCredentialsResponse) Reset() {
+	*x = UserCredentialsResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_api_proto_keeperserver_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -195,13 +299,13 @@ func (x *RegisterResponse) Reset() {
 	}
 }
 
-func (x *RegisterResponse) String() string {
+func (x *UserCredentialsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RegisterResponse) ProtoMessage() {}
+func (*UserCredentialsResponse) ProtoMessage() {}
 
-func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
+func (x *UserCredentialsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_api_proto_keeperserver_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -213,23 +317,363 @@ func (x *RegisterResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RegisterResponse.ProtoReflect.Descriptor instead.
-func (*RegisterResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use UserCredentialsResponse.ProtoReflect.Descriptor instead.
+func (*UserCredentialsResponse) Descriptor() ([]byte, []int) {
 	return file_api_proto_keeperserver_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *RegisterResponse) GetToken() string {
+func (x *UserCredentialsResponse) GetToken() string {
 	if x != nil {
 		return x.Token
 	}
 	return ""
 }
 
-func (x *RegisterResponse) GetError() string {
+func (x *UserCredentialsResponse) GetError() string {
 	if x != nil {
 		return x.Error
 	}
 	return ""
+}
+
+type UploadPlainSecretRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Secret string `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty"`
+	Type   string `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	Name   string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+}
+
+func (x *UploadPlainSecretRequest) Reset() {
+	*x = UploadPlainSecretRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_proto_keeperserver_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UploadPlainSecretRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadPlainSecretRequest) ProtoMessage() {}
+
+func (x *UploadPlainSecretRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_keeperserver_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadPlainSecretRequest.ProtoReflect.Descriptor instead.
+func (*UploadPlainSecretRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_keeperserver_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *UploadPlainSecretRequest) GetSecret() string {
+	if x != nil {
+		return x.Secret
+	}
+	return ""
+}
+
+func (x *UploadPlainSecretRequest) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *UploadPlainSecretRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type UploadPlainSecretResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Error string `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *UploadPlainSecretResponse) Reset() {
+	*x = UploadPlainSecretResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_proto_keeperserver_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UploadPlainSecretResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadPlainSecretResponse) ProtoMessage() {}
+
+func (x *UploadPlainSecretResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_keeperserver_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadPlainSecretResponse.ProtoReflect.Descriptor instead.
+func (*UploadPlainSecretResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_keeperserver_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *UploadPlainSecretResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+type MediaSecretMetadata struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+}
+
+func (x *MediaSecretMetadata) Reset() {
+	*x = MediaSecretMetadata{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_proto_keeperserver_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MediaSecretMetadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MediaSecretMetadata) ProtoMessage() {}
+
+func (x *MediaSecretMetadata) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_keeperserver_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MediaSecretMetadata.ProtoReflect.Descriptor instead.
+func (*MediaSecretMetadata) Descriptor() ([]byte, []int) {
+	return file_api_proto_keeperserver_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *MediaSecretMetadata) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type MediaSecret struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Content []byte `protobuf:"bytes,1,opt,name=content,proto3" json:"content,omitempty"`
+}
+
+func (x *MediaSecret) Reset() {
+	*x = MediaSecret{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_proto_keeperserver_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *MediaSecret) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MediaSecret) ProtoMessage() {}
+
+func (x *MediaSecret) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_keeperserver_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MediaSecret.ProtoReflect.Descriptor instead.
+func (*MediaSecret) Descriptor() ([]byte, []int) {
+	return file_api_proto_keeperserver_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *MediaSecret) GetContent() []byte {
+	if x != nil {
+		return x.Content
+	}
+	return nil
+}
+
+type UploadMediaSecretRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Types that are assignable to Request:
+	//
+	//	*UploadMediaSecretRequest_Metadata
+	//	*UploadMediaSecretRequest_Data
+	Request isUploadMediaSecretRequest_Request `protobuf_oneof:"request"`
+}
+
+func (x *UploadMediaSecretRequest) Reset() {
+	*x = UploadMediaSecretRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_proto_keeperserver_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UploadMediaSecretRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadMediaSecretRequest) ProtoMessage() {}
+
+func (x *UploadMediaSecretRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_keeperserver_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadMediaSecretRequest.ProtoReflect.Descriptor instead.
+func (*UploadMediaSecretRequest) Descriptor() ([]byte, []int) {
+	return file_api_proto_keeperserver_proto_rawDescGZIP(), []int{8}
+}
+
+func (m *UploadMediaSecretRequest) GetRequest() isUploadMediaSecretRequest_Request {
+	if m != nil {
+		return m.Request
+	}
+	return nil
+}
+
+func (x *UploadMediaSecretRequest) GetMetadata() *MediaSecretMetadata {
+	if x, ok := x.GetRequest().(*UploadMediaSecretRequest_Metadata); ok {
+		return x.Metadata
+	}
+	return nil
+}
+
+func (x *UploadMediaSecretRequest) GetData() *MediaSecret {
+	if x, ok := x.GetRequest().(*UploadMediaSecretRequest_Data); ok {
+		return x.Data
+	}
+	return nil
+}
+
+type isUploadMediaSecretRequest_Request interface {
+	isUploadMediaSecretRequest_Request()
+}
+
+type UploadMediaSecretRequest_Metadata struct {
+	Metadata *MediaSecretMetadata `protobuf:"bytes,1,opt,name=metadata,proto3,oneof"`
+}
+
+type UploadMediaSecretRequest_Data struct {
+	Data *MediaSecret `protobuf:"bytes,2,opt,name=data,proto3,oneof"`
+}
+
+func (*UploadMediaSecretRequest_Metadata) isUploadMediaSecretRequest_Request() {}
+
+func (*UploadMediaSecretRequest_Data) isUploadMediaSecretRequest_Request() {}
+
+type UploadMediaSecretResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Name   string       `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Status UploadStatus `protobuf:"varint,2,opt,name=status,proto3,enum=keeperservice.grpc.UploadStatus" json:"status,omitempty"`
+}
+
+func (x *UploadMediaSecretResponse) Reset() {
+	*x = UploadMediaSecretResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_proto_keeperserver_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *UploadMediaSecretResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UploadMediaSecretResponse) ProtoMessage() {}
+
+func (x *UploadMediaSecretResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_proto_keeperserver_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UploadMediaSecretResponse.ProtoReflect.Descriptor instead.
+func (*UploadMediaSecretResponse) Descriptor() ([]byte, []int) {
+	return file_api_proto_keeperserver_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *UploadMediaSecretResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UploadMediaSecretResponse) GetStatus() UploadStatus {
+	if x != nil {
+		return x.Status
+	}
+	return UploadStatus_PENDING
 }
 
 var File_api_proto_keeperserver_proto protoreflect.FileDescriptor
@@ -244,30 +688,85 @@ var file_api_proto_keeperserver_proto_rawDesc = []byte{
 	0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x61,
 	0x6e, 0x73, 0x77, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x61, 0x6e, 0x73,
 	0x77, 0x65, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x43, 0x0a, 0x0f, 0x52, 0x65, 0x67,
-	0x69, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05,
-	0x6c, 0x6f, 0x67, 0x69, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x6c, 0x6f, 0x67,
-	0x69, 0x6e, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64, 0x22, 0x3e,
-	0x0a, 0x10, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x09, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f,
-	0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x32, 0xb1,
-	0x01, 0x0a, 0x0d, 0x4b, 0x65, 0x65, 0x70, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65,
-	0x12, 0x49, 0x0a, 0x04, 0x50, 0x69, 0x6e, 0x67, 0x12, 0x1f, 0x2e, 0x6b, 0x65, 0x65, 0x70, 0x65,
-	0x72, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x50, 0x69,
-	0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x6b, 0x65, 0x65, 0x70,
+	0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x4a, 0x0a, 0x16, 0x55, 0x73, 0x65,
+	0x72, 0x43, 0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x73, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x6c, 0x6f, 0x67, 0x69, 0x6e, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x05, 0x6c, 0x6f, 0x67, 0x69, 0x6e, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x61, 0x73,
+	0x73, 0x77, 0x6f, 0x72, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x70, 0x61, 0x73,
+	0x73, 0x77, 0x6f, 0x72, 0x64, 0x22, 0x45, 0x0a, 0x17, 0x55, 0x73, 0x65, 0x72, 0x43, 0x72, 0x65,
+	0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x5a, 0x0a, 0x18,
+	0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x50, 0x6c, 0x61, 0x69, 0x6e, 0x53, 0x65, 0x63, 0x72, 0x65,
+	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x65, 0x63, 0x72,
+	0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74,
+	0x12, 0x12, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04,
+	0x74, 0x79, 0x70, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0x31, 0x0a, 0x19, 0x55, 0x70, 0x6c, 0x6f,
+	0x61, 0x64, 0x50, 0x6c, 0x61, 0x69, 0x6e, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x29, 0x0a, 0x13, 0x4d,
+	0x65, 0x64, 0x69, 0x61, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
+	0x74, 0x61, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0x27, 0x0a, 0x0b, 0x4d, 0x65, 0x64, 0x69, 0x61, 0x53,
+	0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x22,
+	0xa3, 0x01, 0x0a, 0x18, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x4d, 0x65, 0x64, 0x69, 0x61, 0x53,
+	0x65, 0x63, 0x72, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x45, 0x0a, 0x08,
+	0x6d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27,
+	0x2e, 0x6b, 0x65, 0x65, 0x70, 0x65, 0x72, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x67,
+	0x72, 0x70, 0x63, 0x2e, 0x4d, 0x65, 0x64, 0x69, 0x61, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x4d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0x48, 0x00, 0x52, 0x08, 0x6d, 0x65, 0x74, 0x61, 0x64,
+	0x61, 0x74, 0x61, 0x12, 0x35, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x1f, 0x2e, 0x6b, 0x65, 0x65, 0x70, 0x65, 0x72, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x4d, 0x65, 0x64, 0x69, 0x61, 0x53, 0x65, 0x63, 0x72,
+	0x65, 0x74, 0x48, 0x00, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x42, 0x09, 0x0a, 0x07, 0x72, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x69, 0x0a, 0x19, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x4d,
+	0x65, 0x64, 0x69, 0x61, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x38, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x20, 0x2e, 0x6b, 0x65, 0x65, 0x70, 0x65, 0x72, 0x73,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x55, 0x70, 0x6c, 0x6f,
+	0x61, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73,
+	0x2a, 0x46, 0x0a, 0x0a, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x54, 0x79, 0x70, 0x65, 0x12, 0x12,
+	0x0a, 0x0e, 0x4c, 0x4f, 0x47, 0x49, 0x4e, 0x5f, 0x50, 0x41, 0x53, 0x53, 0x57, 0x4f, 0x52, 0x44,
+	0x10, 0x00, 0x12, 0x0f, 0x0a, 0x0b, 0x43, 0x52, 0x45, 0x44, 0x49, 0x54, 0x5f, 0x43, 0x41, 0x52,
+	0x44, 0x10, 0x01, 0x12, 0x08, 0x0a, 0x04, 0x54, 0x45, 0x58, 0x54, 0x10, 0x02, 0x12, 0x09, 0x0a,
+	0x05, 0x4d, 0x45, 0x44, 0x49, 0x41, 0x10, 0x03, 0x2a, 0x45, 0x0a, 0x0c, 0x55, 0x70, 0x6c, 0x6f,
+	0x61, 0x64, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x0b, 0x0a, 0x07, 0x50, 0x45, 0x4e, 0x44,
+	0x49, 0x4e, 0x47, 0x10, 0x00, 0x12, 0x0f, 0x0a, 0x0b, 0x49, 0x4e, 0x5f, 0x50, 0x52, 0x4f, 0x47,
+	0x52, 0x45, 0x53, 0x53, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x53, 0x55, 0x43, 0x43, 0x45, 0x53,
+	0x53, 0x10, 0x02, 0x12, 0x0a, 0x0a, 0x06, 0x46, 0x41, 0x49, 0x4c, 0x45, 0x44, 0x10, 0x03, 0x32,
+	0x95, 0x03, 0x0a, 0x0d, 0x4b, 0x65, 0x65, 0x70, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x12, 0x49, 0x0a, 0x04, 0x50, 0x69, 0x6e, 0x67, 0x12, 0x1f, 0x2e, 0x6b, 0x65, 0x65, 0x70,
 	0x65, 0x72, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x50,
-	0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x55, 0x0a, 0x08, 0x52,
-	0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x12, 0x23, 0x2e, 0x6b, 0x65, 0x65, 0x70, 0x65, 0x72,
-	0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x52, 0x65, 0x67,
-	0x69, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x24, 0x2e, 0x6b,
-	0x65, 0x65, 0x70, 0x65, 0x72, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x67, 0x72, 0x70,
-	0x63, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x42, 0x29, 0x5a, 0x27, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
-	0x2f, 0x6e, 0x65, 0x73, 0x73, 0x61, 0x69, 0x31, 0x2f, 0x67, 0x6f, 0x70, 0x68, 0x6b, 0x65, 0x65,
-	0x70, 0x65, 0x72, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70,
-	0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x6b, 0x65, 0x65,
+	0x70, 0x65, 0x72, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e,
+	0x50, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x63, 0x0a, 0x08,
+	0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x12, 0x2a, 0x2e, 0x6b, 0x65, 0x65, 0x70, 0x65,
+	0x72, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x55, 0x73,
+	0x65, 0x72, 0x43, 0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x73, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x2b, 0x2e, 0x6b, 0x65, 0x65, 0x70, 0x65, 0x72, 0x73, 0x65, 0x72,
+	0x76, 0x69, 0x63, 0x65, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x55, 0x73, 0x65, 0x72, 0x43, 0x72,
+	0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x60, 0x0a, 0x05, 0x4c, 0x6f, 0x67, 0x69, 0x6e, 0x12, 0x2a, 0x2e, 0x6b, 0x65, 0x65,
+	0x70, 0x65, 0x72, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e,
+	0x55, 0x73, 0x65, 0x72, 0x43, 0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x73, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2b, 0x2e, 0x6b, 0x65, 0x65, 0x70, 0x65, 0x72, 0x73,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x55, 0x73, 0x65, 0x72,
+	0x43, 0x72, 0x65, 0x64, 0x65, 0x6e, 0x74, 0x69, 0x61, 0x6c, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x72, 0x0a, 0x11, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x4d, 0x65, 0x64,
+	0x69, 0x61, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x12, 0x2c, 0x2e, 0x6b, 0x65, 0x65, 0x70, 0x65,
+	0x72, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x55, 0x70,
+	0x6c, 0x6f, 0x61, 0x64, 0x4d, 0x65, 0x64, 0x69, 0x61, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2d, 0x2e, 0x6b, 0x65, 0x65, 0x70, 0x65, 0x72, 0x73,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x2e, 0x67, 0x72, 0x70, 0x63, 0x2e, 0x55, 0x70, 0x6c, 0x6f,
+	0x61, 0x64, 0x4d, 0x65, 0x64, 0x69, 0x61, 0x53, 0x65, 0x63, 0x72, 0x65, 0x74, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x28, 0x01, 0x42, 0x29, 0x5a, 0x27, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6e, 0x65, 0x73, 0x73, 0x61, 0x69, 0x31, 0x2f, 0x67, 0x6f,
+	0x70, 0x68, 0x6b, 0x65, 0x65, 0x70, 0x65, 0x72, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -282,23 +781,39 @@ func file_api_proto_keeperserver_proto_rawDescGZIP() []byte {
 	return file_api_proto_keeperserver_proto_rawDescData
 }
 
-var file_api_proto_keeperserver_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_api_proto_keeperserver_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_api_proto_keeperserver_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_api_proto_keeperserver_proto_goTypes = []interface{}{
-	(*PingRequest)(nil),      // 0: keeperservice.grpc.PingRequest
-	(*PingResponse)(nil),     // 1: keeperservice.grpc.PingResponse
-	(*RegisterRequest)(nil),  // 2: keeperservice.grpc.RegisterRequest
-	(*RegisterResponse)(nil), // 3: keeperservice.grpc.RegisterResponse
+	(SecretType)(0),                   // 0: keeperservice.grpc.SecretType
+	(UploadStatus)(0),                 // 1: keeperservice.grpc.UploadStatus
+	(*PingRequest)(nil),               // 2: keeperservice.grpc.PingRequest
+	(*PingResponse)(nil),              // 3: keeperservice.grpc.PingResponse
+	(*UserCredentialsRequest)(nil),    // 4: keeperservice.grpc.UserCredentialsRequest
+	(*UserCredentialsResponse)(nil),   // 5: keeperservice.grpc.UserCredentialsResponse
+	(*UploadPlainSecretRequest)(nil),  // 6: keeperservice.grpc.UploadPlainSecretRequest
+	(*UploadPlainSecretResponse)(nil), // 7: keeperservice.grpc.UploadPlainSecretResponse
+	(*MediaSecretMetadata)(nil),       // 8: keeperservice.grpc.MediaSecretMetadata
+	(*MediaSecret)(nil),               // 9: keeperservice.grpc.MediaSecret
+	(*UploadMediaSecretRequest)(nil),  // 10: keeperservice.grpc.UploadMediaSecretRequest
+	(*UploadMediaSecretResponse)(nil), // 11: keeperservice.grpc.UploadMediaSecretResponse
 }
 var file_api_proto_keeperserver_proto_depIdxs = []int32{
-	0, // 0: keeperservice.grpc.KeeperService.Ping:input_type -> keeperservice.grpc.PingRequest
-	2, // 1: keeperservice.grpc.KeeperService.Register:input_type -> keeperservice.grpc.RegisterRequest
-	1, // 2: keeperservice.grpc.KeeperService.Ping:output_type -> keeperservice.grpc.PingResponse
-	3, // 3: keeperservice.grpc.KeeperService.Register:output_type -> keeperservice.grpc.RegisterResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	8,  // 0: keeperservice.grpc.UploadMediaSecretRequest.metadata:type_name -> keeperservice.grpc.MediaSecretMetadata
+	9,  // 1: keeperservice.grpc.UploadMediaSecretRequest.data:type_name -> keeperservice.grpc.MediaSecret
+	1,  // 2: keeperservice.grpc.UploadMediaSecretResponse.status:type_name -> keeperservice.grpc.UploadStatus
+	2,  // 3: keeperservice.grpc.KeeperService.Ping:input_type -> keeperservice.grpc.PingRequest
+	4,  // 4: keeperservice.grpc.KeeperService.Register:input_type -> keeperservice.grpc.UserCredentialsRequest
+	4,  // 5: keeperservice.grpc.KeeperService.Login:input_type -> keeperservice.grpc.UserCredentialsRequest
+	10, // 6: keeperservice.grpc.KeeperService.UploadMediaSecret:input_type -> keeperservice.grpc.UploadMediaSecretRequest
+	3,  // 7: keeperservice.grpc.KeeperService.Ping:output_type -> keeperservice.grpc.PingResponse
+	5,  // 8: keeperservice.grpc.KeeperService.Register:output_type -> keeperservice.grpc.UserCredentialsResponse
+	5,  // 9: keeperservice.grpc.KeeperService.Login:output_type -> keeperservice.grpc.UserCredentialsResponse
+	11, // 10: keeperservice.grpc.KeeperService.UploadMediaSecret:output_type -> keeperservice.grpc.UploadMediaSecretResponse
+	7,  // [7:11] is the sub-list for method output_type
+	3,  // [3:7] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_api_proto_keeperserver_proto_init() }
@@ -332,7 +847,7 @@ func file_api_proto_keeperserver_proto_init() {
 			}
 		}
 		file_api_proto_keeperserver_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RegisterRequest); i {
+			switch v := v.(*UserCredentialsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -344,7 +859,79 @@ func file_api_proto_keeperserver_proto_init() {
 			}
 		}
 		file_api_proto_keeperserver_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*RegisterResponse); i {
+			switch v := v.(*UserCredentialsResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_api_proto_keeperserver_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UploadPlainSecretRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_api_proto_keeperserver_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UploadPlainSecretResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_api_proto_keeperserver_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MediaSecretMetadata); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_api_proto_keeperserver_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*MediaSecret); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_api_proto_keeperserver_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UploadMediaSecretRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_api_proto_keeperserver_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UploadMediaSecretResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -356,18 +943,23 @@ func file_api_proto_keeperserver_proto_init() {
 			}
 		}
 	}
+	file_api_proto_keeperserver_proto_msgTypes[8].OneofWrappers = []interface{}{
+		(*UploadMediaSecretRequest_Metadata)(nil),
+		(*UploadMediaSecretRequest_Data)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_api_proto_keeperserver_proto_rawDesc,
-			NumEnums:      0,
-			NumMessages:   4,
+			NumEnums:      2,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_api_proto_keeperserver_proto_goTypes,
 		DependencyIndexes: file_api_proto_keeperserver_proto_depIdxs,
+		EnumInfos:         file_api_proto_keeperserver_proto_enumTypes,
 		MessageInfos:      file_api_proto_keeperserver_proto_msgTypes,
 	}.Build()
 	File_api_proto_keeperserver_proto = out.File

@@ -34,3 +34,31 @@ func (c *GRPCServiceConnector) Ping(ctx context.Context) (answer string, err err
 
 	return response.Answer, nil
 }
+
+func (c *GRPCServiceConnector) Register(ctx context.Context, login, password string) (token string, err error) {
+	req := pb.UserCredentialsRequest{
+		Login:    login,
+		Password: password,
+	}
+
+	response, err := c.client.Register(ctx, &req)
+	if err != nil {
+		return "", fmt.Errorf("error while register (service error: %w)", err)
+	}
+
+	return response.Token, nil
+}
+
+func (c *GRPCServiceConnector) Login(ctx context.Context, login, password string) (token string, err error) {
+	req := pb.UserCredentialsRequest{
+		Login:    login,
+		Password: password,
+	}
+
+	response, err := c.client.Login(ctx, &req)
+	if err != nil {
+		return "", fmt.Errorf("error while login (service error: %w)", err)
+	}
+
+	return response.Token, nil
+}

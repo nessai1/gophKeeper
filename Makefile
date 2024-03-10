@@ -17,3 +17,4 @@ compile-keeper:
 	rm keeper/keeper
 	GOOS=linux GOARCH=amd64 go build -o keeper/keeper -ldflags "-X main.Commit=$(COMMIT) -X 'main.BuildTime=$(BUILD_DATE)' -X main.Version=$(VERSION)" cmd/keeper/main.go
 	zip -r ./bin/keeper/keeper_linux.zip keeper
+	rm -r keeper

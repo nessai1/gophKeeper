@@ -14,17 +14,67 @@ message PingResponse {
   string error = 2;
 }
 
-message RegisterRequest {
+message UserCredentialsRequest {
   string login = 1;
   string password = 2;
 }
 
-message RegisterResponse {
+message UserCredentialsResponse {
   string token = 1;
   string error = 2;
 }
 
+
+enum SecretType {
+  LOGIN_PASSWORD = 0;
+  CREDIT_CARD = 1;
+  TEXT = 2;
+  MEDIA = 3;
+}
+
+message UploadPlainSecretRequest {
+  string secret = 1;
+  string type = 2;
+  string name = 3;
+}
+
+message UploadPlainSecretResponse {
+  string error = 1;
+}
+
+
+message MediaSecretMetadata {
+  string name = 1;
+}
+
+message MediaSecret {
+  bytes content = 1;
+}
+
+message UploadMediaSecretRequest {
+  oneof request {
+    MediaSecretMetadata metadata = 1;
+    MediaSecret data = 2;
+  }
+}
+
+enum UploadStatus {
+  PENDING = 0;
+  IN_PROGRESS = 1;
+  SUCCESS = 2;
+  FAILED = 3;
+}
+
+message UploadMediaSecretResponse {
+  string name = 1;
+  UploadStatus status = 2;
+}
+
+
 service KeeperService {
   rpc Ping(PingRequest) returns (PingResponse);
-  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Register(UserCredentialsRequest) returns (UserCredentialsResponse);
+  rpc Login(UserCredentialsRequest) returns (UserCredentialsResponse);
+
+  rpc UploadMediaSecret(stream UploadMediaSecretRequest) returns(UploadMediaSecretResponse);
 }

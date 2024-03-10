@@ -92,6 +92,13 @@ func createKeeperDataDir(dir string) error {
 		return fmt.Errorf("cannot create logs dir: %w", err)
 	}
 
+	mediaPath := filepath.Join(dir, "media")
+
+	err = os.Mkdir(mediaPath, 0777)
+	if err != nil && !errors.As(err, &os.ErrExist) {
+		return fmt.Errorf("cannot create media dir: %w", err)
+	}
+
 	return nil
 }
 
@@ -138,6 +145,7 @@ func (a *Application) Run() error {
 					a,
 					a.logger,
 					cmd.Args,
+					a.config.WorkDir,
 				)
 			}
 		}

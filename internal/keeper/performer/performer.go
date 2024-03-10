@@ -23,6 +23,7 @@ type Performer interface {
 		sessional Sessional,
 		logger *zap.Logger,
 		args []string,
+		workDir string,
 	) (requireExit bool, err error)
 }
 
@@ -33,4 +34,5 @@ var AvailablePerformers = []Performer{
 	Register{},
 	Login{},
 	Logout{},
+	Secret{},
 }

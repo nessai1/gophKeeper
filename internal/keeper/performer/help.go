@@ -25,7 +25,7 @@ func (p Help) GetDetailDescription() string {
 	return "Get common help information and list of available commands\nIf has argument [command] - returns detail description about concrete command"
 }
 
-func (p Help) Execute(_ connector.ServiceConnector, _ Sessional, _ *zap.Logger, args []string) (requireExit bool, err error) {
+func (p Help) Execute(_ connector.ServiceConnector, _ Sessional, _ *zap.Logger, args []string, _ string) (requireExit bool, err error) {
 	if len(args) > 2 {
 		return false, fmt.Errorf("command has too many arguments (%d, requires 1)", len(args)-1)
 	}
@@ -45,7 +45,7 @@ func (p Help) Execute(_ connector.ServiceConnector, _ Sessional, _ *zap.Logger, 
 func (p Help) printCommandsList() {
 	fmt.Print("List of commands\n--------\n")
 	for _, val := range AvailablePerformers {
-		fmt.Printf("%s\t%s\n", val.GetStruct(), val.GetDescription())
+		fmt.Printf("%s\t%s\n", val.GetName(), val.GetDescription())
 	}
 }
 

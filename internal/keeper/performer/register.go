@@ -29,7 +29,7 @@ func (p Register) GetDetailDescription() string {
 	return "Register in external service.\nFor registration client need has unauthorized session before this command, use 'logout' command for this"
 }
 
-func (p Register) Execute(conn connector.ServiceConnector, sessional Sessional, logger *zap.Logger, _ []string) (requireExit bool, err error) {
+func (p Register) Execute(conn connector.ServiceConnector, sessional Sessional, logger *zap.Logger, _ []string, _ string) (requireExit bool, err error) {
 	if sessional.GetSession() != nil {
 		return false, fmt.Errorf("you need to unauthorize by 'logout' before")
 	}

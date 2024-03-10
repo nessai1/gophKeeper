@@ -24,6 +24,6 @@ func (p Exit) GetDetailDescription() string {
 	return "Exits the application, that's all :)"
 }
 
-func (p Exit) Execute(_ connector.ServiceConnector, _ Sessional, _ *zap.Logger, _ []string) (requireExit bool, err error) {
+func (p Exit) Execute(_ connector.ServiceConnector, _ Sessional, _ *zap.Logger, _ []string, _ string) (requireExit bool, err error) {
 	return true, nil
 }

@@ -26,7 +26,7 @@ func (p Ping) GetDetailDescription() string {
 	return "Ping to the external service. If service exists and works - it returns 'pong!' answer"
 }
 
-func (p Ping) Execute(conn connector.ServiceConnector, _ Sessional, logger *zap.Logger, _ []string) (requireExit bool, err error) {
+func (p Ping) Execute(conn connector.ServiceConnector, _ Sessional, logger *zap.Logger, _ []string, _ string) (requireExit bool, err error) {
 	answer, err := conn.Ping(context.TODO())
 	if err != nil {
 		logger.Error("Error while ping service", zap.Error(err))

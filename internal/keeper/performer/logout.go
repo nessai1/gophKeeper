@@ -25,7 +25,7 @@ func (p Logout) GetDetailDescription() string {
 	return "Logout from current session."
 }
 
-func (p Logout) Execute(conn connector.ServiceConnector, sessional Sessional, logger *zap.Logger, _ []string) (requireExit bool, err error) {
+func (p Logout) Execute(conn connector.ServiceConnector, sessional Sessional, logger *zap.Logger, _ []string, _ string) (requireExit bool, err error) {
 	if sessional.GetSession() == nil {
 		return false, fmt.Errorf("you already logouted")
 	}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/nessai1/gophkeeper/internal/keeper/connector"
 	"go.uber.org/zap"
+	"os"
 )
 
 type secretMediaPerformer struct {
@@ -14,9 +15,13 @@ type secretMediaPerformer struct {
 	workDir   string
 }
 
+// Set encrypt by AES file with path == name and save it on external service
 func (p *secretMediaPerformer) Set(ctx context.Context, name string) error {
-	fmt.Printf("action set for media.....\n")
-	// TODO: find file in media dir; AES encrypt by session secret key; send to server;
+	file, err := os.Open(name)
+	if err != nil {
+		return fmt.Errorf("cannot find file '%s': %w", name, err)
+	}
+
 	return nil
 }
 

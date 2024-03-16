@@ -17,7 +17,7 @@ const BlockSize = 284
 
 // EncryptFile encrypt file by AES algorithm and returns encrypted file descriptor
 func EncryptFile(_ context.Context, file *os.File, destination string, key [32]byte) (*os.File, error) {
-	bf := make([]byte, ContentSectionSize)
+
 	output, err := os.OpenFile(destination, os.O_CREATE|os.O_RDWR|os.O_EXCL, 0666)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create file %s for encrypt: %w", destination, err)
@@ -28,8 +28,15 @@ func EncryptFile(_ context.Context, file *os.File, destination string, key [32]b
 		output.Close()
 		return nil, fmt.Errorf("cannot seek file to the start while encrypt: %w", err)
 	}
+
+	var bf []byte
 	for {
-		_, err = file.Read(bf)
+		bf = make([]byte, ContentSectionSize)
+		n, err := file.Read(bf)
+		if n != ContentSectionSize {
+			bf = bf[:n]
+		}
+
 		if errors.Is(err, io.EOF) {
 			break
 		}
@@ -58,7 +65,6 @@ func EncryptFile(_ context.Context, file *os.File, destination string, key [32]b
 
 // DecryptFile decrypt file by AES algorithm and returns decrypted file descriptor
 func DecryptFile(_ context.Context, file *os.File, destination string, key [32]byte) (*os.File, error) {
-	bf := make([]byte, BlockSize)
 	output, err := os.OpenFile(destination, os.O_CREATE|os.O_RDWR|os.O_EXCL, 0666)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create file %s for decrypt: %w", destination, err)
@@ -69,8 +75,15 @@ func DecryptFile(_ context.Context, file *os.File, destination string, key [32]b
 		output.Close()
 		return nil, fmt.Errorf("cannot seek file to the start while decrypt: %w", err)
 	}
+
+	var bf []byte
 	for {
-		_, err = file.Read(bf)
+		bf = make([]byte, BlockSize)
+		n, err := file.Read(bf)
+		if n != BlockSize {
+			bf = bf[:n]
+		}
+
 		if errors.Is(err, io.EOF) {
 			break
 		}

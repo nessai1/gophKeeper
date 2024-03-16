@@ -34,6 +34,7 @@ func TestEncryptDecryptFile(t *testing.T) {
 	_, err = bf.ReadFrom(decryptDest)
 	require.NoError(t, err)
 
-	fmt.Println(string())
+	fmt.Println(string(bf.Bytes()))
+	fmt.Println(string(someFileContent))
 	assert.Equal(t, someFileContent, bf.Bytes())
 }

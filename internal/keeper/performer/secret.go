@@ -54,7 +54,7 @@ Available actions:
 	-- For credentials it ask login&password and save it by name
 	-- For card it ask card-colder&cvv&number&date and save it by name
 	-- For text it ask text and save it by name
-	-- For media it find file in media dir by name and upload it on server
+	-- For media it find file with path == name and upload it on server
 
 - get - get data of secrets
 	-- For credentials/card/text it show information about secret by name
@@ -91,10 +91,10 @@ func (p Secret) Execute(conn connector.ServiceConnector, sessional Sessional, lo
 	var performer secretPerformer
 	if secretType == SecretTypeMedia {
 		performer = &secretMediaPerformer{
-			conn:      conn,
-			sessional: sessional,
-			logger:    logger,
-			workDir:   workDir,
+			conn:    conn,
+			session: *sessional.GetSession(),
+			logger:  logger,
+			workDir: workDir,
 		}
 	}
 

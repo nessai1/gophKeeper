@@ -3,27 +3,107 @@ package connector
 import (
 	"context"
 	"fmt"
+	pb "github.com/nessai1/gophkeeper/api/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-
-	pb "github.com/nessai1/gophkeeper/api/proto"
+	"google.golang.org/grpc/metadata"
+	"io"
 )
 
 type GRPCServiceConnector struct {
+	authToken string
+
 	connection *grpc.ClientConn
 	client     pb.KeeperServiceClient
 }
 
+const uploadBlockSize = 256 * 524288 // ~0.5mb
+
+func (c *GRPCServiceConnector) UploadMedia(ctx context.Context, name string, reader io.Reader) (string, error) {
+	stream, err := c.client.UploadMediaSecret(ctx)
+	if err != nil {
+		return "", fmt.Errorf("cannot open stream for upload media sercret: %w", err)
+	}
+
+	md := pb.MediaSecretMetadata{Name: name}
+
+	err = stream.Send(&pb.UploadMediaSecretRequest{Request: &pb.UploadMediaSecretRequest_Metadata{Metadata: &md}})
+	if err != nil {
+		return "", fmt.Errorf("cannot send metadata in media secret upload stream: %w", err)
+	}
+
+	var b []byte
+	for {
+		b = make([]byte, uploadBlockSize)
+		n, err := reader.Read(b)
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return "", fmt.Errorf("cannot read media for upload: %w", err)
+		}
+
+		if n != uploadBlockSize {
+			b = b[:n]
+		}
+
+		err = stream.Send(&pb.UploadMediaSecretRequest{Request: &pb.UploadMediaSecretRequest_Data{Data: &pb.MediaSecret{Chunk: b}}})
+		if err != nil {
+			return "", fmt.Errorf("cannot send media chunk: %w", err)
+		}
+	}
+
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		return "", fmt.Errorf("cannot close stream for upload media secret: %w", err)
+	}
+
+	return res.Uuid, nil
+}
+
 func CreateGRPCConnector(serviceAddr string) (*GRPCServiceConnector, error) {
-	conn, err := grpc.Dial(serviceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	server := &GRPCServiceConnector{}
+	conn, err := grpc.Dial(
+		serviceAddr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithUnaryInterceptor(server.unaryAuthInterceptor),
+		grpc.WithStreamInterceptor(server.streamAuthInterceptor),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create gRPC connector: %w", err)
 	}
 
-	return &GRPCServiceConnector{
-		connection: conn,
-		client:     pb.NewKeeperServiceClient(conn),
-	}, nil
+	server.connection = conn
+	server.client = pb.NewKeeperServiceClient(conn)
+
+	return server, nil
+}
+
+func (c *GRPCServiceConnector) unaryAuthInterceptor(ctx context.Context, method string, req interface{},
+	reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker,
+	opts ...grpc.CallOption) error {
+
+	if c.authToken != "" {
+		ctx = metadata.AppendToOutgoingContext(ctx, "jwt", c.authToken)
+	}
+
+	err := invoker(ctx, method, req, reply, cc, opts...)
+
+	return err
+}
+
+func (c *GRPCServiceConnector) streamAuthInterceptor(ctx context.Context, desc *grpc.StreamDesc,
+	cc *grpc.ClientConn, method string, streamer grpc.Streamer,
+	opts ...grpc.CallOption) (grpc.ClientStream, error) {
+
+	if c.authToken != "" {
+		ctx = metadata.AppendToOutgoingContext(ctx, "jwt", c.authToken)
+	}
+
+	stream, err := streamer(ctx, desc, cc, method, opts...)
+
+	return stream, err
 }
 
 func (c *GRPCServiceConnector) Ping(ctx context.Context) (answer string, err error) {
@@ -61,4 +141,8 @@ func (c *GRPCServiceConnector) Login(ctx context.Context, login, password string
 	}
 
 	return response.Token, nil
+}
+
+func (c *GRPCServiceConnector) SetAuthToken(token string) {
+	c.authToken = token
 }

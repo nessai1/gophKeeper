@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"github.com/nessai1/gophkeeper/internal/service/plainstorage"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -25,6 +26,15 @@ type UserContextKeyType string
 type claims struct {
 	jwt.RegisteredClaims
 	UserUUID string
+}
+
+type serverStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (s *serverStream) Context() context.Context {
+	return s.ctx
 }
 
 // ContextAuthKey type for store user UUID in request context
@@ -55,25 +65,10 @@ func (s *Server) unaryAuthInterceptor(ctx context.Context, req any, info *grpc.U
 		return nil, status.Error(codes.Unauthenticated, "This method require auth metadata")
 	}
 
-	tokenArr := md.Get("jwt")
-	if tokenArr == nil || len(tokenArr) == 0 {
-		return nil, status.Error(codes.Unauthenticated, "This method require auth metadata (got empty jwt field in metadata)")
-	}
-
-	userUUID, err := fetchUUID(tokenArr[0], s.config.SecretToken)
+	user, err := s.fetchUserFromMetadata(ctx, md)
 	if err != nil {
-		s.logger.Info("User sends invalid to parse jwt", zap.Error(err))
-
-		return nil, status.Error(codes.Unauthenticated, "Cannot parse jwt token for authorize")
+		return nil, err
 	}
-
-	user, err := s.plainStorage.GetUserByUUID(ctx, userUUID)
-	if err != nil {
-		s.logger.Error("Cannot get user by UUID", zap.Error(err))
-
-		return nil, status.Error(codes.Unauthenticated, "Cannot get user by given credentials")
-	}
-
 	ctx = context.WithValue(ctx, UserContextKey, user)
 	resp, err = handler(ctx, req)
 
@@ -95,7 +90,60 @@ func fetchUUID(sign, secretToken string) (string, error) {
 
 func (s *Server) streamAuthInterceptor(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	s.logger.Info("Got new stream request", zap.String("method", info.FullMethod))
-	return nil
+
+	inWhiteList := false
+	for _, val := range unauthorizedMethods {
+		if val == info.FullMethod {
+			inWhiteList = true
+			break
+		}
+	}
+
+	if inWhiteList {
+		return handler(srv, ss)
+	}
+
+	md, ok := metadata.FromIncomingContext(ss.Context())
+	if !ok {
+		s.logger.Debug("User request doesn't contain metadata for auth request", zap.String("method", info.FullMethod))
+
+		return status.Error(codes.Unauthenticated, "This method require auth metadata")
+	}
+
+	user, err := s.fetchUserFromMetadata(ss.Context(), md)
+	if err != nil {
+		return err
+	}
+
+	s.logger.Info("User has auth streaming request", zap.String("login", user.Login))
+	ctx := context.WithValue(ss.Context(), UserContextKey, user)
+
+	return handler(srv, &serverStream{ss, ctx})
+}
+
+func (s *Server) fetchUserFromMetadata(ctx context.Context, md metadata.MD) (*plainstorage.User, error) {
+	tokenArr := md.Get("jwt")
+	if tokenArr == nil || len(tokenArr) == 0 {
+		s.logger.Error("User has no token metadata in request")
+
+		return nil, status.Error(codes.Unauthenticated, "This method require auth metadata (got empty jwt field in metadata)")
+	}
+
+	userUUID, err := fetchUUID(tokenArr[0], s.config.SecretToken)
+	if err != nil {
+		s.logger.Info("User sends invalid to parse jwt", zap.Error(err))
+
+		return nil, status.Error(codes.Unauthenticated, "Cannot parse jwt token for authorize")
+	}
+
+	user, err := s.plainStorage.GetUserByUUID(ctx, userUUID)
+	if err != nil {
+		s.logger.Error("Cannot get user by UUID", zap.Error(err))
+
+		return nil, status.Error(codes.Unauthenticated, "Cannot get user by given credentials")
+	}
+
+	return user, nil
 }
 
 func generateSign(UUID, secret string) (string, error) {

@@ -25,11 +25,10 @@ message UserCredentialsResponse {
 }
 
 
-enum SecretType {
+enum PlainSecretType {
   LOGIN_PASSWORD = 0;
   CREDIT_CARD = 1;
   TEXT = 2;
-  MEDIA = 3;
 }
 
 message UploadPlainSecretRequest {
@@ -48,7 +47,7 @@ message MediaSecretMetadata {
 }
 
 message MediaSecret {
-  bytes content = 1;
+  bytes chunk = 1;
 }
 
 message UploadMediaSecretRequest {
@@ -58,16 +57,10 @@ message UploadMediaSecretRequest {
   }
 }
 
-enum UploadStatus {
-  PENDING = 0;
-  IN_PROGRESS = 1;
-  SUCCESS = 2;
-  FAILED = 3;
-}
-
 message UploadMediaSecretResponse {
-  string name = 1;
-  UploadStatus status = 2;
+  string uuid = 1;
+  string name = 2;
+  string error = 3;
 }
 
 

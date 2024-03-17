@@ -1,6 +1,7 @@
 package s3storage
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/smithy-go/logging"
 	"github.com/nessai1/gophkeeper/internal/service/config"
+	"github.com/nessai1/gophkeeper/internal/service/mediastorage"
 	"go.uber.org/zap"
 	"log"
 
@@ -80,9 +82,13 @@ func (s *S3Storage) getBucket(name string) *types.Bucket {
 	return nil
 }
 
-func (s *S3Storage) List() {
-	// Запрашиваем список бакетов
+func (s *S3Storage) StartUpload(ctx context.Context, key string) (mediastorage.MultipartUpload, error) {
+	u, err := newS3MultipartUpload(ctx, key, keeperBucketID, s.client)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create new media upload: %w", err)
+	}
 
+	return u, nil
 }
 
 type s3Logger struct {
@@ -94,4 +100,71 @@ func (s s3Logger) Logf(classification logging.Classification, format string, v .
 	logMsg = fmt.Sprintf("[S3 LOG] %s", logMsg)
 
 	s.logger.Info(logMsg, zap.String("classification", string(classification)))
+}
+
+type S3MultipartUpload struct {
+	key      string
+	bucketID string
+	uploadID string
+
+	partsCount int32
+	client     *s3.Client
+
+	parts []types.CompletedPart
+}
+
+func newS3MultipartUpload(ctx context.Context, key string, bucketID string, client *s3.Client) (*S3MultipartUpload, error) {
+	u := S3MultipartUpload{
+		key:        key,
+		bucketID:   bucketID,
+		partsCount: 1,
+		client:     client,
+	}
+
+	o, err := client.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{Bucket: &bucketID, Key: &key})
+	if err != nil {
+		return nil, fmt.Errorf("cannot create new S3 upload: %w", err)
+	}
+
+	u.uploadID = *o.UploadId
+
+	return &u, nil
+}
+
+func (u *S3MultipartUpload) Upload(ctx context.Context, content []byte) error {
+	l := int64(len(content))
+	b := bytes.NewBuffer(content)
+
+	resp, err := u.client.UploadPart(ctx, &s3.UploadPartInput{Bucket: &u.bucketID, Key: &u.key, UploadId: &u.uploadID, PartNumber: &u.partsCount, ContentLength: &l, Body: b})
+	if err != nil {
+		return fmt.Errorf("cannot send S3 data part: %w", err)
+	}
+
+	var cnt = u.partsCount
+	u.parts = append(u.parts, types.CompletedPart{
+		ETag:       resp.ETag,
+		PartNumber: &cnt,
+	})
+
+	u.partsCount++
+
+	return nil
+}
+
+func (u *S3MultipartUpload) Complete(ctx context.Context) error {
+	_, err := u.client.CompleteMultipartUpload(ctx, &s3.CompleteMultipartUploadInput{Bucket: &u.bucketID, Key: &u.key, UploadId: &u.uploadID, MultipartUpload: &types.CompletedMultipartUpload{Parts: u.parts}})
+	if err != nil {
+		return fmt.Errorf("cannot complete s3 data upload: %w", err)
+	}
+
+	return nil
+}
+
+func (u *S3MultipartUpload) Abort(ctx context.Context) error {
+	_, err := u.client.AbortMultipartUpload(ctx, &s3.AbortMultipartUploadInput{Bucket: &u.bucketID, Key: &u.key, UploadId: &u.uploadID})
+	if err != nil {
+		return fmt.Errorf("cannot abort s3 data upload: %w", err)
+	}
+
+	return nil
 }

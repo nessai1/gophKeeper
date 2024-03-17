@@ -38,6 +38,10 @@ func NewPSQLPlainStorage(cfg config.PSQLPlainStorageConfig) (*PSQLPlainStorage, 
 		return nil, fmt.Errorf("cannot open psql connection: %w", err)
 	}
 
+	if err = db.Ping(); err != nil {
+		return nil, fmt.Errorf("cannot ping psql connection: %w", err)
+	}
+
 	err = initPSQLMigrations(db)
 	if err != nil && !errors.As(migrate.ErrNoChange, &err) {
 		return nil, fmt.Errorf("cannot init psql migrations: %w", err)
@@ -124,4 +128,30 @@ func (s *PSQLPlainStorage) GetUserSecretsByType(ctx context.Context, userUUID st
 func (s *PSQLPlainStorage) GetPlainSecretByUUID(ctx context.Context, secretUUID string) (*PlainSecret, error) {
 	//TODO implement me
 	panic("implement me")
+}
+
+func (s *PSQLPlainStorage) AddSecretMetadata(ctx context.Context, userUUID string, name string, dataType SecretType) (*SecretMetadata, error) {
+	dataUUID := uuid.New().String()
+	_, err := s.db.ExecContext(ctx, "INSERT INTO secret_metadata (uuid, owner_uuid, name, type) VALUES ($1, $2, $3, $4)", dataUUID, userUUID, name, dataType)
+
+	if err != nil {
+		return nil, fmt.Errorf("cannot create secret metadata: %w", err)
+	}
+
+	return &SecretMetadata{
+		UUID:     dataUUID,
+		UserUUID: userUUID,
+		Name:     name,
+		Type:     dataType,
+	}, nil
+}
+
+func (s *PSQLPlainStorage) RemoveSecretByUUID(ctx context.Context, secretUUID string) error {
+	_, err := s.db.ExecContext(ctx, "DELETE FROM secret_metadata WHERE uuid = $1", secretUUID)
+
+	if err != nil {
+		return fmt.Errorf("cannot remove secret metadata: %w", err)
+	}
+
+	return nil
 }

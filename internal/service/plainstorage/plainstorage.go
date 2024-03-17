@@ -20,6 +20,9 @@ type PlainStorage interface {
 	CreateUser(ctx context.Context, login string, password string) (*User, error)
 	GetUserSecretsByType(ctx context.Context, userUUID string, secretType SecretType) ([]SecretMetadata, error)
 	GetPlainSecretByUUID(ctx context.Context, secretUUID string) (*PlainSecret, error)
+
+	AddSecretMetadata(ctx context.Context, userUUID string, name string, dataType SecretType) (*SecretMetadata, error)
+	RemoveSecretByUUID(ctx context.Context, secretUUID string) error
 }
 
 var ErrSecretNotFound = errors.New("secret not found")
@@ -37,11 +40,11 @@ type User struct {
 }
 
 type SecretMetadata struct {
-	UUID string
+	UUID     string
+	UserUUID string
 
 	// Name for plains - title, for media - filename
 	Name string
 
-	Type    SecretType
-	IsPlain bool
+	Type SecretType
 }

@@ -187,6 +187,12 @@ func (a *Application) getPerformers() {
 
 func (a *Application) SetSession(s *session.Session) {
 	a.session = s
+
+	if s != nil {
+		a.connector.SetAuthToken(s.AuthToken)
+	} else {
+		a.connector.SetAuthToken("")
+	}
 }
 
 func (a *Application) GetSession() *session.Session {

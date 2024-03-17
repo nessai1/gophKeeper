@@ -157,11 +157,6 @@ func (s *PSQLPlainStorage) GetUserSecretsMetadataByType(ctx context.Context, use
 	return secrets, nil
 }
 
-func (s *PSQLPlainStorage) GetPlainSecretByUUID(ctx context.Context, secretUUID string) (*PlainSecret, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func (s *PSQLPlainStorage) AddSecretMetadata(ctx context.Context, userUUID string, name string, dataType SecretType) (*SecretMetadata, error) {
 	dataUUID := uuid.New().String()
 	_, err := s.db.ExecContext(ctx, "INSERT INTO secret_metadata (uuid, owner_uuid, name, type) VALUES ($1, $2, $3, $4)", dataUUID, userUUID, name, dataType)
@@ -183,6 +178,88 @@ func (s *PSQLPlainStorage) RemoveSecretByUUID(ctx context.Context, secretUUID st
 
 	if err != nil {
 		return fmt.Errorf("cannot remove secret metadata: %w", err)
+	}
+
+	return nil
+}
+
+func (s *PSQLPlainStorage) AddPlainSecret(ctx context.Context, userUUID string, name string, dataType SecretType, data []byte) (*PlainSecret, error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("cannot start create secret transaction: %w", err)
+	}
+
+	md, err := s.AddSecretMetadata(ctx, userUUID, name, dataType)
+	if err != nil {
+		txErr := tx.Rollback()
+		if txErr != nil {
+			s.logger.Error("Cannot rollback create secret transaction", zap.Error(err))
+		}
+
+		return nil, fmt.Errorf("cannot create metadata of plain secret: %w", err)
+	}
+
+	_, err = s.db.ExecContext(ctx, "INSERT INTO plain_secret (uuid, data) VALUES ($1, $2)", md.UUID, string(data))
+	if err != nil {
+		txErr := tx.Rollback()
+		if txErr != nil {
+			s.logger.Error("Cannot rollback create secret transaction", zap.Error(err))
+		}
+
+		return nil, fmt.Errorf("cannot insert plain secret data to table: %w", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, fmt.Errorf("cannot commit create secret transaction: %w", err)
+	}
+
+	return &PlainSecret{
+		Metadata: *md,
+		Data:     data,
+	}, nil
+}
+
+func (s *PSQLPlainStorage) UpdatePlainSecretByName(ctx context.Context, ownerUUID string, name string, data []byte) error {
+	var secretUUID string
+	err := s.db.QueryRowContext(ctx, "SELECT uuid FROM secret_metadata WHERE owner_uuid == $1 AND name == $2", ownerUUID, name).Scan(&secretUUID)
+	if err != nil && errors.Is(sql.ErrNoRows, err) {
+		return ErrSecretNotFound
+	}
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("cannot start update transaction: %w", err)
+	}
+
+	_, err = s.db.ExecContext(ctx, "UPDATE secret_metadata SET updated = now() WHERE owner_uuid = $1 AND name == $2", ownerUUID, name)
+	if err != nil {
+		txErr := tx.Rollback()
+		if txErr != nil {
+			s.logger.Error("Cannot rollback update transaction", zap.Error(txErr))
+		}
+
+		return fmt.Errorf("error while update metadata: %w", err)
+	}
+
+	if data == nil {
+		_, err = s.db.ExecContext(ctx, "DELETE FROM plain_secret WHERE uuid = $1", secretUUID)
+	} else {
+		_, err = s.db.ExecContext(ctx, "INSERT INTO plain_secret (uuid, data) VALUES ($1, $2) ON CONFLICT (uuid) DO UPDATE SET data = $2", secretUUID, string(data))
+	}
+
+	if err != nil {
+		txErr := tx.Rollback()
+		if txErr != nil {
+			s.logger.Error("Cannot rollback update transaction", zap.Error(txErr))
+		}
+
+		return fmt.Errorf("cannot update secret data: %w", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("cannot commit secret update: %w", err)
 	}
 
 	return nil

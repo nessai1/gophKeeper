@@ -25,6 +25,10 @@ const (
 	KeeperService_UploadMediaSecret_FullMethodName   = "/keeperservice.grpc.KeeperService/UploadMediaSecret"
 	KeeperService_DownloadMediaSecret_FullMethodName = "/keeperservice.grpc.KeeperService/DownloadMediaSecret"
 	KeeperService_SecretList_FullMethodName          = "/keeperservice.grpc.KeeperService/SecretList"
+	KeeperService_SecretSet_FullMethodName           = "/keeperservice.grpc.KeeperService/SecretSet"
+	KeeperService_SecretGet_FullMethodName           = "/keeperservice.grpc.KeeperService/SecretGet"
+	KeeperService_SecretUpdate_FullMethodName        = "/keeperservice.grpc.KeeperService/SecretUpdate"
+	KeeperService_SecretDelete_FullMethodName        = "/keeperservice.grpc.KeeperService/SecretDelete"
 )
 
 // KeeperServiceClient is the client API for KeeperService service.
@@ -37,6 +41,10 @@ type KeeperServiceClient interface {
 	UploadMediaSecret(ctx context.Context, opts ...grpc.CallOption) (KeeperService_UploadMediaSecretClient, error)
 	DownloadMediaSecret(ctx context.Context, in *DownloadMediaSecretRequest, opts ...grpc.CallOption) (KeeperService_DownloadMediaSecretClient, error)
 	SecretList(ctx context.Context, in *SecretListRequest, opts ...grpc.CallOption) (*SecretListResponse, error)
+	SecretSet(ctx context.Context, in *SecretSetRequest, opts ...grpc.CallOption) (*SecretSetResponse, error)
+	SecretGet(ctx context.Context, in *SecretGetRequest, opts ...grpc.CallOption) (*SecretGetResponse, error)
+	SecretUpdate(ctx context.Context, in *SecretUpdateRequest, opts ...grpc.CallOption) (*SecretUpdateResponse, error)
+	SecretDelete(ctx context.Context, in *SecretDeleteRequest, opts ...grpc.CallOption) (*SecretDeleteResponse, error)
 }
 
 type keeperServiceClient struct {
@@ -149,6 +157,42 @@ func (c *keeperServiceClient) SecretList(ctx context.Context, in *SecretListRequ
 	return out, nil
 }
 
+func (c *keeperServiceClient) SecretSet(ctx context.Context, in *SecretSetRequest, opts ...grpc.CallOption) (*SecretSetResponse, error) {
+	out := new(SecretSetResponse)
+	err := c.cc.Invoke(ctx, KeeperService_SecretSet_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keeperServiceClient) SecretGet(ctx context.Context, in *SecretGetRequest, opts ...grpc.CallOption) (*SecretGetResponse, error) {
+	out := new(SecretGetResponse)
+	err := c.cc.Invoke(ctx, KeeperService_SecretGet_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keeperServiceClient) SecretUpdate(ctx context.Context, in *SecretUpdateRequest, opts ...grpc.CallOption) (*SecretUpdateResponse, error) {
+	out := new(SecretUpdateResponse)
+	err := c.cc.Invoke(ctx, KeeperService_SecretUpdate_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *keeperServiceClient) SecretDelete(ctx context.Context, in *SecretDeleteRequest, opts ...grpc.CallOption) (*SecretDeleteResponse, error) {
+	out := new(SecretDeleteResponse)
+	err := c.cc.Invoke(ctx, KeeperService_SecretDelete_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KeeperServiceServer is the server API for KeeperService service.
 // All implementations must embed UnimplementedKeeperServiceServer
 // for forward compatibility
@@ -159,6 +203,10 @@ type KeeperServiceServer interface {
 	UploadMediaSecret(KeeperService_UploadMediaSecretServer) error
 	DownloadMediaSecret(*DownloadMediaSecretRequest, KeeperService_DownloadMediaSecretServer) error
 	SecretList(context.Context, *SecretListRequest) (*SecretListResponse, error)
+	SecretSet(context.Context, *SecretSetRequest) (*SecretSetResponse, error)
+	SecretGet(context.Context, *SecretGetRequest) (*SecretGetResponse, error)
+	SecretUpdate(context.Context, *SecretUpdateRequest) (*SecretUpdateResponse, error)
+	SecretDelete(context.Context, *SecretDeleteRequest) (*SecretDeleteResponse, error)
 	mustEmbedUnimplementedKeeperServiceServer()
 }
 
@@ -183,6 +231,18 @@ func (UnimplementedKeeperServiceServer) DownloadMediaSecret(*DownloadMediaSecret
 }
 func (UnimplementedKeeperServiceServer) SecretList(context.Context, *SecretListRequest) (*SecretListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SecretList not implemented")
+}
+func (UnimplementedKeeperServiceServer) SecretSet(context.Context, *SecretSetRequest) (*SecretSetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SecretSet not implemented")
+}
+func (UnimplementedKeeperServiceServer) SecretGet(context.Context, *SecretGetRequest) (*SecretGetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SecretGet not implemented")
+}
+func (UnimplementedKeeperServiceServer) SecretUpdate(context.Context, *SecretUpdateRequest) (*SecretUpdateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SecretUpdate not implemented")
+}
+func (UnimplementedKeeperServiceServer) SecretDelete(context.Context, *SecretDeleteRequest) (*SecretDeleteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SecretDelete not implemented")
 }
 func (UnimplementedKeeperServiceServer) mustEmbedUnimplementedKeeperServiceServer() {}
 
@@ -316,6 +376,78 @@ func _KeeperService_SecretList_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KeeperService_SecretSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SecretSetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeeperServiceServer).SecretSet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeeperService_SecretSet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeeperServiceServer).SecretSet(ctx, req.(*SecretSetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KeeperService_SecretGet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SecretGetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeeperServiceServer).SecretGet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeeperService_SecretGet_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeeperServiceServer).SecretGet(ctx, req.(*SecretGetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KeeperService_SecretUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SecretUpdateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeeperServiceServer).SecretUpdate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeeperService_SecretUpdate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeeperServiceServer).SecretUpdate(ctx, req.(*SecretUpdateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KeeperService_SecretDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SecretDeleteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KeeperServiceServer).SecretDelete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KeeperService_SecretDelete_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KeeperServiceServer).SecretDelete(ctx, req.(*SecretDeleteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KeeperService_ServiceDesc is the grpc.ServiceDesc for KeeperService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -338,6 +470,22 @@ var KeeperService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SecretList",
 			Handler:    _KeeperService_SecretList_Handler,
+		},
+		{
+			MethodName: "SecretSet",
+			Handler:    _KeeperService_SecretSet_Handler,
+		},
+		{
+			MethodName: "SecretGet",
+			Handler:    _KeeperService_SecretGet_Handler,
+		},
+		{
+			MethodName: "SecretUpdate",
+			Handler:    _KeeperService_SecretUpdate_Handler,
+		},
+		{
+			MethodName: "SecretDelete",
+			Handler:    _KeeperService_SecretDelete_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

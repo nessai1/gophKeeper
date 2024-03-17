@@ -20,9 +20,11 @@ type PlainStorage interface {
 	GetUserByUUID(ctx context.Context, login string) (*User, error)
 	CreateUser(ctx context.Context, login string, password string) (*User, error)
 	GetUserSecretsMetadataByType(ctx context.Context, userUUID string, secretType SecretType) ([]SecretMetadata, error)
-	GetPlainSecretByUUID(ctx context.Context, secretUUID string) (*PlainSecret, error)
 
 	AddSecretMetadata(ctx context.Context, userUUID string, name string, dataType SecretType) (*SecretMetadata, error)
+	AddPlainSecret(ctx context.Context, userUUID string, name string, dataType SecretType, data []byte) (*PlainSecret, error)
+
+	UpdatePlainSecretByName(ctx context.Context, ownerUUID string, name string, data []byte) error
 	RemoveSecretByUUID(ctx context.Context, secretUUID string) error
 
 	GetUserSecretByName(ctx context.Context, userUUID string, secretName string, secretType SecretType) (*PlainSecret, error)

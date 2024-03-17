@@ -34,11 +34,33 @@ func (s *Server) UploadMediaSecret(stream pb.KeeperService_UploadMediaSecretServ
 
 	s.logger.Info("User sends new media", zap.String("login", user.Login), zap.String("filename", metadata.Name))
 
-	dbMetadata, err := s.plainStorage.AddSecretMetadata(stream.Context(), user.UUID, metadata.Name, plainstorage.SecretTypeMedia)
-	if err != nil {
-		s.logger.Error("Error while save metadata of secret", zap.Error(err))
+	var dbMetadata *plainstorage.SecretMetadata
+	if metadata.Overwrite {
+		secret, err := s.plainStorage.GetUserSecretByName(stream.Context(), user.UUID, metadata.Name, plainstorage.SecretTypeMedia)
+		if err != nil && errors.Is(plainstorage.ErrSecretNotFound, err) {
+			return status.Errorf(codes.NotFound, "updating secret '%s' doesn't exists", metadata.Name)
+		}
+		dbMetadata = &secret.Metadata
 
-		return status.Error(codes.Internal, "cannot save media metadata")
+		err = s.plainStorage.UpdatePlainSecretByName(stream.Context(), user.UUID, metadata.Name, nil)
+		if err != nil {
+			s.logger.Error("Cannot update media secret metadata", zap.Error(err))
+
+			return status.Error(codes.Internal, "cannot update media metadata")
+		}
+
+		s.logger.Info("Start remove old media secret", zap.String("filename", metadata.Name))
+		err = s.mediaStorage.Delete(stream.Context(), dbMetadata.UUID)
+		if err != nil {
+			s.logger.Error("cannot remove old media secret", zap.String("filename", metadata.Name), zap.String("media_uuid", dbMetadata.UUID))
+		}
+	} else {
+		dbMetadata, err = s.plainStorage.AddSecretMetadata(stream.Context(), user.UUID, metadata.Name, plainstorage.SecretTypeMedia)
+		if err != nil {
+			s.logger.Error("Error while save metadata of secret", zap.Error(err))
+
+			return status.Error(codes.Internal, "cannot update media metadata")
+		}
 	}
 
 	upload, err := s.mediaStorage.StartUpload(stream.Context(), dbMetadata.UUID)

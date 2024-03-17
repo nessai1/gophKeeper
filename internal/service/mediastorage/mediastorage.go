@@ -8,6 +8,7 @@ import (
 type MediaStorage interface {
 	StartUpload(ctx context.Context, key string) (MultipartUpload, error)
 	StartDownload(ctx context.Context, key string) (io.ReadCloser, error)
+	Delete(ctx context.Context, key string) error
 }
 
 type MultipartUpload interface {

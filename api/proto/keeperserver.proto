@@ -84,6 +84,45 @@ message SecretListResponse {
   string error = 2;
 }
 
+message SecretSetRequest {
+  SecretType secret_type = 1;
+  string name = 2;
+  bytes content = 3;
+}
+
+message SecretSetResponse {
+  string error = 1;
+}
+
+message SecretGetRequest {
+  SecretType secret_type = 1;
+  string name = 2;
+}
+
+message SecretGetResponse {
+  Secret secret = 1;
+  string error = 2;
+}
+
+message SecretUpdateRequest {
+  SecretType secret_type = 1;
+  string name = 2;
+  bytes content = 3;
+}
+
+message SecretUpdateResponse {
+  string error = 1;
+}
+
+message SecretDeleteRequest {
+  SecretType secret_type = 1;
+  string secret_name = 2;
+}
+
+message SecretDeleteResponse {
+  string error = 1;
+}
+
 service KeeperService {
   rpc Ping(PingRequest) returns (PingResponse);
   rpc Register(UserCredentialsRequest) returns (UserCredentialsResponse);
@@ -93,8 +132,8 @@ service KeeperService {
   rpc DownloadMediaSecret(DownloadMediaSecretRequest) returns(stream DownloadMediaSecretResponse);
 
   rpc SecretList(SecretListRequest) returns(SecretListResponse);
-//  rpc SecretGet() returns();
-//  rpc SecretSet() returns();
-//  rpc SecretUpdate() returns();
-//  rpc SecretDelete() returns();
+  rpc SecretSet(SecretSetRequest) returns(SecretSetResponse);
+  rpc SecretGet(SecretGetRequest) returns(SecretGetResponse);
+  rpc SecretUpdate(SecretUpdateRequest) returns(SecretUpdateResponse);
+  rpc SecretDelete(SecretDeleteRequest) returns(SecretDeleteResponse);
 }

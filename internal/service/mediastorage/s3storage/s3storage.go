@@ -104,6 +104,17 @@ func (s *S3Storage) StartUpload(ctx context.Context, key string) (mediastorage.M
 	return u, nil
 }
 
+func (s *S3Storage) Delete(ctx context.Context, key string) error {
+	bucketID := keeperBucketID
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{Bucket: &bucketID, Key: &key})
+
+	if err != nil {
+		return fmt.Errorf("cannot delete s3 media object: %w", err)
+	}
+
+	return nil
+}
+
 type s3Logger struct {
 	logger *zap.Logger
 }

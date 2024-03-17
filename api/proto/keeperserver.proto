@@ -24,23 +24,7 @@ message UserCredentialsResponse {
   string error = 2;
 }
 
-
-enum PlainSecretType {
-  LOGIN_PASSWORD = 0;
-  CREDIT_CARD = 1;
-  TEXT = 2;
-}
-
-message UploadPlainSecretRequest {
-  string secret = 1;
-  string type = 2;
-  string name = 3;
-}
-
-message UploadPlainSecretResponse {
-  string error = 1;
-}
-
+// Media section
 
 message MediaSecretMetadata {
   string name = 1;
@@ -73,6 +57,32 @@ message DownloadMediaSecretResponse {
   MediaSecret secretPart = 1;
 }
 
+// Common secrets section
+
+enum SecretType {
+  CREDENTIALS = 0;
+  CREDIT_CARD = 1;
+  TEXT = 2;
+  MEDIA = 3;
+}
+
+message Secret {
+  SecretType secret_type = 1;
+  string name = 2;
+  int64 create_timestamp = 3;
+  int64 update_timestamp = 4;
+  bytes content = 5;
+}
+
+message SecretListRequest {
+  SecretType secret_type = 1;
+  string error = 2;
+}
+
+message SecretListResponse {
+  repeated Secret secrets = 1;
+  string error = 2;
+}
 
 service KeeperService {
   rpc Ping(PingRequest) returns (PingResponse);
@@ -81,4 +91,10 @@ service KeeperService {
 
   rpc UploadMediaSecret(stream UploadMediaSecretRequest) returns(UploadMediaSecretResponse);
   rpc DownloadMediaSecret(DownloadMediaSecretRequest) returns(stream DownloadMediaSecretResponse);
+
+  rpc SecretList(SecretListRequest) returns(SecretListResponse);
+//  rpc SecretGet() returns();
+//  rpc SecretSet() returns();
+//  rpc SecretUpdate() returns();
+//  rpc SecretDelete() returns();
 }

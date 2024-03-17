@@ -3,6 +3,7 @@ package performer
 import (
 	"context"
 	"fmt"
+	"github.com/chrusty/go-tableprinter"
 	"github.com/nessai1/gophkeeper/internal/keeper/connector"
 	"go.uber.org/zap"
 	"strings"
@@ -135,6 +136,10 @@ func validateArguments(args []string) error {
 		return fmt.Errorf("invalid secret arguments: %w", err)
 	}
 
+	if len(args) == 3 {
+		return nil
+	}
+
 	if strings.TrimSpace(args[3]) == "" && args[1] != SecretActionList {
 		return fmt.Errorf("secret name can't be empty")
 	}
@@ -164,4 +169,15 @@ type secretPerformer interface {
 	Update(ctx context.Context, name string) error
 	Delete(ctx context.Context, name string) error
 	List(ctx context.Context) error
+}
+
+type printableSecret struct {
+	Name        string
+	Create_time string // snake case used for table formatter
+	Update_time string
+}
+
+func printSecrets(secrets []printableSecret) {
+	tableprinter.SetBorder(true)
+	tableprinter.Print(secrets)
 }

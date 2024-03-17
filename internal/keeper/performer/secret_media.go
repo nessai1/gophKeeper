@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/nessai1/gophkeeper/internal/keeper/connector"
 	"github.com/nessai1/gophkeeper/internal/keeper/media"
+	"github.com/nessai1/gophkeeper/internal/keeper/secret"
 	"github.com/nessai1/gophkeeper/internal/keeper/session"
 	"go.uber.org/zap"
 	"io"
@@ -120,6 +121,41 @@ func (p *secretMediaPerformer) Delete(ctx context.Context, name string) error {
 }
 
 func (p *secretMediaPerformer) List(ctx context.Context) error {
-	//TODO implement me
-	panic("implement me")
+	secrets, err := p.conn.ListSecret(ctx, secret.SecretTypeMedia)
+	if err != nil {
+		p.logger.Error("Cannot list media secrets", zap.Error(err))
+
+		return fmt.Errorf("cannot list media secrets: %w", err)
+	}
+
+	printable := make([]printableSecret, len(secrets))
+	for i, v := range secrets {
+
+		name := v.Name
+		if p.isFileLoaded(name) {
+			name = fmt.Sprintf("\033[32m%s\033[0m", name)
+		} else {
+			name = fmt.Sprintf("\033[33m%s\033[0m", name)
+		}
+
+		printable[i] = printableSecret{
+			Name:        name,
+			Create_time: v.Created.String(),
+			Update_time: v.Updated.String(),
+		}
+	}
+
+	fmt.Printf("\033[32mexists in media \t \033[33mstored only in service\033[0m\n")
+	printSecrets(printable)
+
+	return nil
+}
+
+func (p *secretMediaPerformer) isFileLoaded(name string) bool {
+	_, err := os.Stat(filepath.Join(p.workDir, "media", name))
+	if err != nil {
+		return false
+	}
+
+	return true
 }

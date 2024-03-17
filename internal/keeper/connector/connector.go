@@ -2,6 +2,7 @@ package connector
 
 import (
 	"context"
+	"github.com/nessai1/gophkeeper/internal/keeper/secret"
 	"io"
 	"os"
 )
@@ -16,4 +17,6 @@ type ServiceConnector interface {
 
 	UploadMedia(ctx context.Context, name string, reader io.Reader) (string, error)
 	DownloadMedia(ctx context.Context, name string, dest string) (*os.File, error)
+
+	ListSecret(ctx context.Context, secretType secret.SecretType) ([]secret.Secret, error)
 }

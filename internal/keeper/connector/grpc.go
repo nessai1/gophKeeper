@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	pb "github.com/nessai1/gophkeeper/api/proto"
+	"github.com/nessai1/gophkeeper/internal/keeper/secret"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"io"
 	"os"
+	"time"
 )
 
 type GRPCServiceConnector struct {
@@ -185,4 +187,43 @@ func (c *GRPCServiceConnector) DownloadMedia(ctx context.Context, name string, d
 	}
 
 	return f, nil
+}
+
+func (c *GRPCServiceConnector) ListSecret(ctx context.Context, secretType secret.SecretType) ([]secret.Secret, error) {
+	translatedType, err := translateSecretTypeTypeToGRPCType(secretType)
+	if err != nil {
+		return nil, fmt.Errorf("cannot list secrets: %w", err)
+	}
+
+	resp, err := c.client.SecretList(ctx, &pb.SecretListRequest{SecretType: translatedType})
+	if err != nil {
+		return nil, fmt.Errorf("error while list secrets from external service: %w", err)
+	}
+
+	secrets := make([]secret.Secret, len(resp.Secrets))
+	for i, v := range resp.Secrets {
+		secrets[i] = secret.Secret{
+			SecretType: secretType,
+			Name:       v.Name,
+			Created:    time.Unix(v.CreateTimestamp, 0),
+			Updated:    time.Unix(v.UpdateTimestamp, 0),
+		}
+	}
+
+	return secrets, nil
+}
+
+func translateSecretTypeTypeToGRPCType(keeperSecret secret.SecretType) (pb.SecretType, error) {
+	switch keeperSecret {
+	case secret.SecretTypeCredentials:
+		return pb.SecretType_CREDENTIALS, nil
+	case secret.SecretTypeCard:
+		return pb.SecretType_CREDIT_CARD, nil
+	case secret.SecretTypeText:
+		return pb.SecretType_TEXT, nil
+	case secret.SecretTypeMedia:
+		return pb.SecretType_MEDIA, nil
+	default:
+		return 0, fmt.Errorf("undefined secret type translated")
+	}
 }

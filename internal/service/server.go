@@ -57,7 +57,7 @@ func Run() {
 
 	log.Println("Load plain storage (postgres)")
 
-	s, err := plainstorage.NewPSQLPlainStorage(*c.PlainStorageConfig.PSQLStorage)
+	s, err := plainstorage.NewPSQLPlainStorage(*c.PlainStorageConfig.PSQLStorage, l)
 	if err != nil {
 		log.Fatalf("Cannot build plain psql storage: %s", err.Error())
 	}

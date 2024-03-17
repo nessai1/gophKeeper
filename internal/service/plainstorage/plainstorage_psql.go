@@ -8,6 +8,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/nessai1/gophkeeper/internal/service/config"
+	"go.uber.org/zap"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -20,9 +21,10 @@ import (
 type PSQLPlainStorage struct {
 	config config.PSQLPlainStorageConfig
 	db     *sql.DB
+	logger *zap.Logger
 }
 
-func NewPSQLPlainStorage(cfg config.PSQLPlainStorageConfig) (*PSQLPlainStorage, error) {
+func NewPSQLPlainStorage(cfg config.PSQLPlainStorageConfig, l *zap.Logger) (*PSQLPlainStorage, error) {
 	db, err := sql.Open(
 		"pgx",
 		fmt.Sprintf(
@@ -51,6 +53,7 @@ func NewPSQLPlainStorage(cfg config.PSQLPlainStorageConfig) (*PSQLPlainStorage, 
 	return &PSQLPlainStorage{
 		config: cfg,
 		db:     db,
+		logger: l,
 	}, nil
 }
 
@@ -121,9 +124,37 @@ func (s *PSQLPlainStorage) CreateUser(ctx context.Context, login string, passwor
 	}, nil
 }
 
-func (s *PSQLPlainStorage) GetUserSecretsByType(ctx context.Context, userUUID string, secretType SecretType) ([]SecretMetadata, error) {
-	//TODO implement me
-	panic("implement me")
+func (s *PSQLPlainStorage) GetUserSecretsMetadataByType(ctx context.Context, userUUID string, secretType SecretType) ([]SecretMetadata, error) {
+	rows, err := s.db.QueryContext(ctx, "SELECT uuid, name, created, updated FROM secret_metadata WHERE owner_uuid = $1 AND type = $2", userUUID, secretType)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get user secrets by type: %w", err)
+	}
+
+	secrets := make([]SecretMetadata, 0)
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			s.logger.Error("Cannot close rows in secrets list query", zap.Error(err))
+		}
+	}()
+
+	for rows.Next() {
+		secret := SecretMetadata{
+			UserUUID: userUUID,
+			Type:     secretType,
+		}
+
+		err := rows.Scan(&secret.UUID, &secret.Name, &secret.Created, &secret.Updated)
+		if err != nil {
+			s.logger.Error("Error while fetch row from secrets list query", zap.Error(err))
+
+			continue
+		}
+
+		secrets = append(secrets, secret)
+	}
+
+	return secrets, nil
 }
 
 func (s *PSQLPlainStorage) GetPlainSecretByUUID(ctx context.Context, secretUUID string) (*PlainSecret, error) {

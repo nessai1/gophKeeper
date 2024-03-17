@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"io"
+	"os"
 )
 
 type GRPCServiceConnector struct {
@@ -145,4 +146,43 @@ func (c *GRPCServiceConnector) Login(ctx context.Context, login, password string
 
 func (c *GRPCServiceConnector) SetAuthToken(token string) {
 	c.authToken = token
+}
+
+func (c *GRPCServiceConnector) DownloadMedia(ctx context.Context, name string, dest string) (*os.File, error) {
+	stream, err := c.client.DownloadMediaSecret(ctx, &pb.DownloadMediaSecretRequest{SecretName: name})
+	if err != nil {
+		return nil, fmt.Errorf("cannot start media download: %w", err)
+	}
+
+	f, err := os.Create(dest)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create file to dest %s: %w", dest, err)
+	}
+
+	for {
+		recv, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			f.Close()
+
+			return nil, fmt.Errorf("cannot receive package of media file: %w", err)
+		}
+
+		_, err = f.Write(recv.GetSecretPart().Chunk)
+		if err != nil {
+			f.Close()
+
+			return nil, fmt.Errorf("cannot write media chunk to file while download: %w", err)
+		}
+	}
+
+	_, err = f.Seek(0, 0)
+	if err != nil {
+		return nil, fmt.Errorf("cannot seek destination file: %w", err)
+	}
+
+	return f, nil
 }

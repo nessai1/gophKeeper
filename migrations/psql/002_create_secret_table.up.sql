@@ -16,5 +16,5 @@ CREATE TABLE IF NOT EXISTS plain_secret (
 );
 
 CREATE INDEX secret_metadata_owner_uuid ON secret_metadata (owner_uuid);
-CREATE INDEX secret_metadata_owner_uuid_name ON secret_metadata (owner_uuid, name);
+CREATE INDEX secret_metadata_owner_uuid_name_type ON secret_metadata (owner_uuid, name, type);
 COMMIT;

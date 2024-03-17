@@ -98,11 +98,25 @@ func (p Secret) Execute(conn connector.ServiceConnector, sessional Sessional, lo
 		}
 	}
 
-	if secretAction == SecretActionSet {
-		err := performer.Set(context.TODO(), secretName)
-		if err != nil {
-			return false, fmt.Errorf("error whle perform %s to type %s: %w", secretAction, secretType, err)
-		}
+	ctx := context.TODO()
+	err = nil
+	switch secretAction {
+	case SecretActionSet:
+		err = performer.Set(ctx, secretName)
+	case SecretActionGet:
+		err = performer.Get(ctx, secretName)
+	case SecretActionList:
+		err = performer.List(ctx)
+	case SecretActionUpdate:
+		err = performer.Update(ctx, secretName)
+	case SecretActionDelete:
+		err = performer.Delete(ctx, secretName)
+	default:
+		err = fmt.Errorf("undefined action occured: %s", secretAction)
+	}
+
+	if err != nil {
+		return false, fmt.Errorf("error whle perform %s to type %s: %w", secretAction, secretType, err)
 	}
 
 	return false, nil

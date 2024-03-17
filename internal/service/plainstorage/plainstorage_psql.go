@@ -8,6 +8,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/nessai1/gophkeeper/internal/service/config"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
@@ -154,4 +155,46 @@ func (s *PSQLPlainStorage) RemoveSecretByUUID(ctx context.Context, secretUUID st
 	}
 
 	return nil
+}
+
+func (s *PSQLPlainStorage) GetUserSecretByName(ctx context.Context, userUUID string, secretName string, secretType SecretType) (*PlainSecret, error) {
+	var (
+		secretUUID       string
+		created, updated time.Time
+	)
+
+	err := s.db.
+		QueryRowContext(ctx, "SELECT uuid, created, updated FROM secret_metadata WHERE owner_uuid = $1 AND name = $2 AND type = $3", userUUID, secretName, secretType).
+		Scan(&secretUUID, &created, &updated)
+
+	if errors.Is(sql.ErrNoRows, err) {
+		return nil, ErrSecretNotFound
+	} else if err != nil {
+		return nil, fmt.Errorf("error while get secret metadata: %w", err)
+	}
+
+	var (
+		dbSecretContent string
+		content         []byte
+	)
+	err = s.db.QueryRowContext(ctx, "SELECT data FROM plain_secret WHERE uuid = $1", secretUUID).Scan(&dbSecretContent)
+	if err != nil && !errors.Is(sql.ErrNoRows, err) {
+		return nil, fmt.Errorf("error while get secret content: %w", err)
+	}
+
+	if dbSecretContent != "" {
+		content = []byte(dbSecretContent)
+	}
+
+	return &PlainSecret{
+		Metadata: SecretMetadata{
+			UUID:     secretUUID,
+			UserUUID: userUUID,
+			Name:     secretName,
+			Type:     secretType,
+			Created:  created,
+			Updated:  updated,
+		},
+		Data: content,
+	}, nil
 }

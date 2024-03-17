@@ -3,6 +3,7 @@ package connector
 import (
 	"context"
 	"io"
+	"os"
 )
 
 type ServiceConnector interface {
@@ -14,4 +15,5 @@ type ServiceConnector interface {
 	SetAuthToken(token string)
 
 	UploadMedia(ctx context.Context, name string, reader io.Reader) (string, error)
+	DownloadMedia(ctx context.Context, name string, dest string) (*os.File, error)
 }

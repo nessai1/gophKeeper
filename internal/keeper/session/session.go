@@ -13,10 +13,14 @@ import (
 )
 
 type Session struct {
-	Login     string
+	// Login login of authed user
+	Login string
+	// AuthToken token for auth on external service
 	AuthToken string
+	// SecretKey key for decrypt user secrets
 	SecretKey [32]byte
 
+	// passwordHash hash for confirm next user session in keeper
 	passwordHash string
 }
 

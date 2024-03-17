@@ -3,6 +3,7 @@ package plainstorage
 import (
 	"context"
 	"errors"
+	"time"
 )
 
 const (
@@ -23,6 +24,8 @@ type PlainStorage interface {
 
 	AddSecretMetadata(ctx context.Context, userUUID string, name string, dataType SecretType) (*SecretMetadata, error)
 	RemoveSecretByUUID(ctx context.Context, secretUUID string) error
+
+	GetUserSecretByName(ctx context.Context, userUUID string, secretName string, secretType SecretType) (*PlainSecret, error)
 }
 
 var ErrSecretNotFound = errors.New("secret not found")
@@ -47,4 +50,7 @@ type SecretMetadata struct {
 	Name string
 
 	Type SecretType
+
+	Created time.Time
+	Updated time.Time
 }

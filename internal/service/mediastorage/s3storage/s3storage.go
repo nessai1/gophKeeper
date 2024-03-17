@@ -10,7 +10,9 @@ import (
 	"github.com/aws/smithy-go/logging"
 	"github.com/nessai1/gophkeeper/internal/service/config"
 	"github.com/nessai1/gophkeeper/internal/service/mediastorage"
+	"github.com/nessai1/gophkeeper/pkg/bytesize"
 	"go.uber.org/zap"
+	"io"
 	"log"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -82,6 +84,17 @@ func (s *S3Storage) getBucket(name string) *types.Bucket {
 	return nil
 }
 
+func (s *S3Storage) StartDownload(ctx context.Context, key string) (io.ReadCloser, error) {
+	bucketID := keeperBucketID
+
+	object, err := s.client.GetObject(ctx, &s3.GetObjectInput{Bucket: &bucketID, Key: &key})
+	if err != nil {
+		return nil, fmt.Errorf("cannot get object from S3 storage: %w", err)
+	}
+
+	return object.Body, nil
+}
+
 func (s *S3Storage) StartUpload(ctx context.Context, key string) (mediastorage.MultipartUpload, error) {
 	u, err := newS3MultipartUpload(ctx, key, keeperBucketID, s.client)
 	if err != nil {
@@ -106,6 +119,8 @@ type S3MultipartUpload struct {
 	key      string
 	bucketID string
 	uploadID string
+
+	activeContent []byte
 
 	partsCount int32
 	client     *s3.Client
@@ -132,8 +147,23 @@ func newS3MultipartUpload(ctx context.Context, key string, bucketID string, clie
 }
 
 func (u *S3MultipartUpload) Upload(ctx context.Context, content []byte) error {
-	l := int64(len(content))
-	b := bytes.NewBuffer(content)
+	if u.activeContent != nil {
+		u.activeContent = append(u.activeContent, content...)
+	} else {
+		u.activeContent = content
+	}
+
+	// Yandex cloud docs: content part must be 5MB or more
+	if len(u.activeContent) > int(bytesize.MB)*5 {
+		return u.sendActiveContent(ctx)
+	}
+
+	return nil
+}
+
+func (u *S3MultipartUpload) sendActiveContent(ctx context.Context) error {
+	l := int64(len(u.activeContent))
+	b := bytes.NewBuffer(u.activeContent)
 
 	resp, err := u.client.UploadPart(ctx, &s3.UploadPartInput{Bucket: &u.bucketID, Key: &u.key, UploadId: &u.uploadID, PartNumber: &u.partsCount, ContentLength: &l, Body: b})
 	if err != nil {
@@ -147,11 +177,19 @@ func (u *S3MultipartUpload) Upload(ctx context.Context, content []byte) error {
 	})
 
 	u.partsCount++
+	u.activeContent = nil
 
 	return nil
 }
 
 func (u *S3MultipartUpload) Complete(ctx context.Context) error {
+	if u.activeContent != nil {
+		err := u.sendActiveContent(ctx)
+		if err != nil {
+			return fmt.Errorf("cannot send active content while complete S3 upload: %w", err)
+		}
+	}
+
 	_, err := u.client.CompleteMultipartUpload(ctx, &s3.CompleteMultipartUploadInput{Bucket: &u.bucketID, Key: &u.key, UploadId: &u.uploadID, MultipartUpload: &types.CompletedMultipartUpload{Parts: u.parts}})
 	if err != nil {
 		return fmt.Errorf("cannot complete s3 data upload: %w", err)

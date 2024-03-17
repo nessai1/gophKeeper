@@ -59,7 +59,13 @@ func (p *secretMediaPerformer) Set(ctx context.Context, name string) error {
 		return nil
 	}
 
-	defer copyFile.Close()
+	defer func() {
+		err := copyFile.Close()
+		if err != nil {
+			p.logger.Error("cannot close copy file for media set", zap.Error(err))
+		}
+	}()
+
 	file.Seek(0, 0)
 	_, err = io.Copy(copyFile, file)
 	if err != nil {
@@ -70,8 +76,37 @@ func (p *secretMediaPerformer) Set(ctx context.Context, name string) error {
 }
 
 func (p *secretMediaPerformer) Get(ctx context.Context, name string) error {
-	//TODO implement me
-	panic("implement me")
+	f, err := p.conn.DownloadMedia(ctx, name, filepath.Join(os.TempDir(), filepath.Base(name)+"_"+time.Now().String()+".encrypted"))
+	if err != nil {
+		p.logger.Error("Cannot download media", zap.String("login", p.session.Login), zap.String("filename", name), zap.Error(err))
+
+		return fmt.Errorf("cannot download media %s: %w", name, err)
+	}
+
+	defer func() {
+		err := f.Close()
+		if err != nil {
+			p.logger.Error("cannot close encrypted file for media download", zap.Error(err))
+		}
+	}()
+
+	decryptedFile, err := media.DecryptFile(ctx, f, filepath.Join(p.workDir, "media", name), p.session.SecretKey)
+	if err != nil {
+		p.logger.Error("Cannot decrypt downloaded media", zap.String("login", p.session.Login), zap.String("filename", name), zap.Error(err))
+
+		return fmt.Errorf("cannot decrypt downloaded file: %w", err)
+	}
+
+	err = decryptedFile.Close()
+	if err != nil {
+		p.logger.Error("Cannot close downloaded media", zap.String("login", p.session.Login), zap.String("filename", name), zap.Error(err))
+
+		return fmt.Errorf("cannot decrypt downloaded file: %w", err)
+	}
+
+	fmt.Printf("\033[32mFile %s successfuly download and stored in %s/media directory\033[0m\n", name, p.workDir)
+
+	return nil
 }
 
 func (p *secretMediaPerformer) Update(ctx context.Context, name string) error {

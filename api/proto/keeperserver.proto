@@ -44,6 +44,7 @@ message UploadPlainSecretResponse {
 
 message MediaSecretMetadata {
   string name = 1;
+  bool overwrite = 2;
 }
 
 message MediaSecret {
@@ -64,10 +65,20 @@ message UploadMediaSecretResponse {
 }
 
 
+message DownloadMediaSecretRequest {
+  string secret_name = 1;
+}
+
+message DownloadMediaSecretResponse {
+  MediaSecret secretPart = 1;
+}
+
+
 service KeeperService {
   rpc Ping(PingRequest) returns (PingResponse);
   rpc Register(UserCredentialsRequest) returns (UserCredentialsResponse);
   rpc Login(UserCredentialsRequest) returns (UserCredentialsResponse);
 
   rpc UploadMediaSecret(stream UploadMediaSecretRequest) returns(UploadMediaSecretResponse);
+  rpc DownloadMediaSecret(DownloadMediaSecretRequest) returns(stream DownloadMediaSecretResponse);
 }

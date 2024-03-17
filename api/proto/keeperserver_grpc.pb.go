@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	KeeperService_Ping_FullMethodName              = "/keeperservice.grpc.KeeperService/Ping"
-	KeeperService_Register_FullMethodName          = "/keeperservice.grpc.KeeperService/Register"
-	KeeperService_Login_FullMethodName             = "/keeperservice.grpc.KeeperService/Login"
-	KeeperService_UploadMediaSecret_FullMethodName = "/keeperservice.grpc.KeeperService/UploadMediaSecret"
+	KeeperService_Ping_FullMethodName                = "/keeperservice.grpc.KeeperService/Ping"
+	KeeperService_Register_FullMethodName            = "/keeperservice.grpc.KeeperService/Register"
+	KeeperService_Login_FullMethodName               = "/keeperservice.grpc.KeeperService/Login"
+	KeeperService_UploadMediaSecret_FullMethodName   = "/keeperservice.grpc.KeeperService/UploadMediaSecret"
+	KeeperService_DownloadMediaSecret_FullMethodName = "/keeperservice.grpc.KeeperService/DownloadMediaSecret"
 )
 
 // KeeperServiceClient is the client API for KeeperService service.
@@ -33,6 +34,7 @@ type KeeperServiceClient interface {
 	Register(ctx context.Context, in *UserCredentialsRequest, opts ...grpc.CallOption) (*UserCredentialsResponse, error)
 	Login(ctx context.Context, in *UserCredentialsRequest, opts ...grpc.CallOption) (*UserCredentialsResponse, error)
 	UploadMediaSecret(ctx context.Context, opts ...grpc.CallOption) (KeeperService_UploadMediaSecretClient, error)
+	DownloadMediaSecret(ctx context.Context, in *DownloadMediaSecretRequest, opts ...grpc.CallOption) (KeeperService_DownloadMediaSecretClient, error)
 }
 
 type keeperServiceClient struct {
@@ -104,6 +106,38 @@ func (x *keeperServiceUploadMediaSecretClient) CloseAndRecv() (*UploadMediaSecre
 	return m, nil
 }
 
+func (c *keeperServiceClient) DownloadMediaSecret(ctx context.Context, in *DownloadMediaSecretRequest, opts ...grpc.CallOption) (KeeperService_DownloadMediaSecretClient, error) {
+	stream, err := c.cc.NewStream(ctx, &KeeperService_ServiceDesc.Streams[1], KeeperService_DownloadMediaSecret_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &keeperServiceDownloadMediaSecretClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type KeeperService_DownloadMediaSecretClient interface {
+	Recv() (*DownloadMediaSecretResponse, error)
+	grpc.ClientStream
+}
+
+type keeperServiceDownloadMediaSecretClient struct {
+	grpc.ClientStream
+}
+
+func (x *keeperServiceDownloadMediaSecretClient) Recv() (*DownloadMediaSecretResponse, error) {
+	m := new(DownloadMediaSecretResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // KeeperServiceServer is the server API for KeeperService service.
 // All implementations must embed UnimplementedKeeperServiceServer
 // for forward compatibility
@@ -112,6 +146,7 @@ type KeeperServiceServer interface {
 	Register(context.Context, *UserCredentialsRequest) (*UserCredentialsResponse, error)
 	Login(context.Context, *UserCredentialsRequest) (*UserCredentialsResponse, error)
 	UploadMediaSecret(KeeperService_UploadMediaSecretServer) error
+	DownloadMediaSecret(*DownloadMediaSecretRequest, KeeperService_DownloadMediaSecretServer) error
 	mustEmbedUnimplementedKeeperServiceServer()
 }
 
@@ -130,6 +165,9 @@ func (UnimplementedKeeperServiceServer) Login(context.Context, *UserCredentialsR
 }
 func (UnimplementedKeeperServiceServer) UploadMediaSecret(KeeperService_UploadMediaSecretServer) error {
 	return status.Errorf(codes.Unimplemented, "method UploadMediaSecret not implemented")
+}
+func (UnimplementedKeeperServiceServer) DownloadMediaSecret(*DownloadMediaSecretRequest, KeeperService_DownloadMediaSecretServer) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadMediaSecret not implemented")
 }
 func (UnimplementedKeeperServiceServer) mustEmbedUnimplementedKeeperServiceServer() {}
 
@@ -224,6 +262,27 @@ func (x *keeperServiceUploadMediaSecretServer) Recv() (*UploadMediaSecretRequest
 	return m, nil
 }
 
+func _KeeperService_DownloadMediaSecret_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadMediaSecretRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(KeeperServiceServer).DownloadMediaSecret(m, &keeperServiceDownloadMediaSecretServer{stream})
+}
+
+type KeeperService_DownloadMediaSecretServer interface {
+	Send(*DownloadMediaSecretResponse) error
+	grpc.ServerStream
+}
+
+type keeperServiceDownloadMediaSecretServer struct {
+	grpc.ServerStream
+}
+
+func (x *keeperServiceDownloadMediaSecretServer) Send(m *DownloadMediaSecretResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // KeeperService_ServiceDesc is the grpc.ServiceDesc for KeeperService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -249,6 +308,11 @@ var KeeperService_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "UploadMediaSecret",
 			Handler:       _KeeperService_UploadMediaSecret_Handler,
 			ClientStreams: true,
+		},
+		{
+			StreamName:    "DownloadMediaSecret",
+			Handler:       _KeeperService_DownloadMediaSecret_Handler,
+			ServerStreams: true,
 		},
 	},
 	Metadata: "api/proto/keeperserver.proto",

@@ -87,6 +87,9 @@ func (p Secret) Execute(conn connector.ServiceConnector, sessional Sessional, lo
 	)
 
 	if secretAction != SecretActionList {
+		if len(args) < 4 {
+			return false, fmt.Errorf("mismatch arguments count for secret actions: must be 4")
+		}
 		secretName = args[3]
 	}
 
@@ -110,6 +113,14 @@ func (p Secret) Execute(conn connector.ServiceConnector, sessional Sessional, lo
 			session: *sessional.GetSession(),
 			logger:  logger,
 		}
+	} else if secretType == SecretTypeCard {
+		performer = &secretCardPerformer{
+			conn:    conn,
+			session: *sessional.GetSession(),
+			logger:  logger,
+		}
+	} else {
+		return false, fmt.Errorf("invalid secret type: %s", secretType)
 	}
 
 	ctx := context.TODO()

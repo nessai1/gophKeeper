@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/chrusty/go-tableprinter"
 	"github.com/nessai1/gophkeeper/internal/keeper/connector"
+	"github.com/nessai1/gophkeeper/internal/keeper/secret"
 	"go.uber.org/zap"
 	"strings"
 )
@@ -97,6 +98,12 @@ func (p Secret) Execute(conn connector.ServiceConnector, sessional Sessional, lo
 			logger:  logger,
 			workDir: workDir,
 		}
+	} else if secretType == SecretTypeCredentials {
+		performer = &secretCredentialsPerformer{
+			conn:    conn,
+			session: *sessional.GetSession(),
+			logger:  logger,
+		}
 	}
 
 	ctx := context.TODO()
@@ -180,4 +187,17 @@ type printableSecret struct {
 func printSecrets(secrets []printableSecret) {
 	tableprinter.SetBorder(true)
 	tableprinter.Print(secrets)
+}
+
+func printPlainSecrets(secrets []secret.Secret) {
+	printable := make([]printableSecret, len(secrets))
+	for i, v := range secrets {
+		printable[i] = printableSecret{
+			Name:        v.Name,
+			Create_time: v.Created.String(),
+			Update_time: v.Updated.String(),
+		}
+	}
+
+	printSecrets(printable)
 }

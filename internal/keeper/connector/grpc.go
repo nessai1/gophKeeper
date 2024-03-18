@@ -213,6 +213,78 @@ func (c *GRPCServiceConnector) ListSecret(ctx context.Context, secretType secret
 	return secrets, nil
 }
 
+func (c *GRPCServiceConnector) SetSecret(ctx context.Context, name string, secretType secret.SecretType, data []byte) error {
+	translatedType, err := translateSecretTypeTypeToGRPCType(secretType)
+	if err != nil {
+		return fmt.Errorf("cannot set secret: %w", err)
+	}
+
+	_, err = c.client.SecretSet(ctx, &pb.SecretSetRequest{
+		SecretType: translatedType,
+		Name:       name,
+		Content:    data,
+	})
+
+	if err != nil {
+		return fmt.Errorf("cannot set secret: %w", err)
+	}
+
+	return nil
+}
+
+func (c *GRPCServiceConnector) UpdateSecret(ctx context.Context, name string, secretType secret.SecretType, data []byte) error {
+	translatedType, err := translateSecretTypeTypeToGRPCType(secretType)
+	if err != nil {
+		return fmt.Errorf("cannot update secret: %w", err)
+	}
+
+	_, err = c.client.SecretUpdate(ctx, &pb.SecretUpdateRequest{
+		SecretType: translatedType,
+		Name:       name,
+		Content:    data,
+	})
+
+	if err != nil {
+		return fmt.Errorf("cannot update secret: %w", err)
+	}
+	return nil
+}
+
+func (c *GRPCServiceConnector) RemoveSecret(ctx context.Context, name string, secretType secret.SecretType) error {
+	translatedType, err := translateSecretTypeTypeToGRPCType(secretType)
+	if err != nil {
+		return fmt.Errorf("cannot remove secret: %w", err)
+	}
+
+	_, err = c.client.SecretDelete(ctx, &pb.SecretDeleteRequest{
+		SecretType: translatedType,
+		SecretName: name,
+	})
+	if err != nil {
+		return fmt.Errorf("cannot remove secret: %w", err)
+	}
+
+	return nil
+}
+
+func (c *GRPCServiceConnector) GetSecret(ctx context.Context, name string, secretType secret.SecretType) ([]byte, error) {
+	translatedType, err := translateSecretTypeTypeToGRPCType(secretType)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get secret: %w", err)
+	}
+
+	resp, err := c.client.SecretGet(ctx, &pb.SecretGetRequest{
+		SecretType: translatedType,
+		Name:       name,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("cannot get secret: %w", err)
+	}
+
+	return resp.Secret.Content, nil
+}
+
 func translateSecretTypeTypeToGRPCType(keeperSecret secret.SecretType) (pb.SecretType, error) {
 	switch keeperSecret {
 	case secret.SecretTypeCredentials:

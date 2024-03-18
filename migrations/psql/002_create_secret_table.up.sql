@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS secret_metadata (
 
 CREATE TABLE IF NOT EXISTS plain_secret (
     uuid uuid primary key,
-    data text not null,
+    data bytea not null,
     FOREIGN KEY (uuid) REFERENCES plain_secret (uuid)
 );
 

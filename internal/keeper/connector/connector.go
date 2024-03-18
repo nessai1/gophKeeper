@@ -19,4 +19,8 @@ type ServiceConnector interface {
 	DownloadMedia(ctx context.Context, name string, dest string) (*os.File, error)
 
 	ListSecret(ctx context.Context, secretType secret.SecretType) ([]secret.Secret, error)
+	SetSecret(ctx context.Context, name string, secretType secret.SecretType, data []byte) error
+	UpdateSecret(ctx context.Context, name string, secretType secret.SecretType, data []byte) error
+	RemoveSecret(ctx context.Context, name string, secretType secret.SecretType) error
+	GetSecret(ctx context.Context, name string, secretType secret.SecretType) ([]byte, error)
 }

@@ -184,7 +184,7 @@ func (s *PSQLPlainStorage) RemoveSecretByUUID(ctx context.Context, secretUUID st
 }
 
 func (s *PSQLPlainStorage) AddPlainSecret(ctx context.Context, userUUID string, name string, dataType SecretType, data []byte) (*PlainSecret, error) {
-	tx, err := s.db.Begin()
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("cannot start create secret transaction: %w", err)
 	}
@@ -199,7 +199,7 @@ func (s *PSQLPlainStorage) AddPlainSecret(ctx context.Context, userUUID string, 
 		return nil, fmt.Errorf("cannot create metadata of plain secret: %w", err)
 	}
 
-	_, err = s.db.ExecContext(ctx, "INSERT INTO plain_secret (uuid, data) VALUES ($1, $2)", md.UUID, string(data))
+	_, err = s.db.ExecContext(ctx, "INSERT INTO plain_secret (uuid, data) VALUES ($1, $2)", md.UUID, data)
 	if err != nil {
 		txErr := tx.Rollback()
 		if txErr != nil {
@@ -222,17 +222,19 @@ func (s *PSQLPlainStorage) AddPlainSecret(ctx context.Context, userUUID string, 
 
 func (s *PSQLPlainStorage) UpdatePlainSecretByName(ctx context.Context, ownerUUID string, name string, data []byte) error {
 	var secretUUID string
-	err := s.db.QueryRowContext(ctx, "SELECT uuid FROM secret_metadata WHERE owner_uuid == $1 AND name == $2", ownerUUID, name).Scan(&secretUUID)
+	err := s.db.QueryRowContext(ctx, "SELECT uuid FROM secret_metadata WHERE owner_uuid = $1 AND name = $2", ownerUUID, name).Scan(&secretUUID)
 	if err != nil && errors.Is(sql.ErrNoRows, err) {
 		return ErrSecretNotFound
+	} else if err != nil {
+		return fmt.Errorf("error while get secret metadata: %w", err)
 	}
 
-	tx, err := s.db.Begin()
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("cannot start update transaction: %w", err)
 	}
 
-	_, err = s.db.ExecContext(ctx, "UPDATE secret_metadata SET updated = now() WHERE owner_uuid = $1 AND name == $2", ownerUUID, name)
+	_, err = s.db.ExecContext(ctx, "UPDATE secret_metadata SET updated = now() WHERE owner_uuid = $1 AND name = $2", ownerUUID, name)
 	if err != nil {
 		txErr := tx.Rollback()
 		if txErr != nil {
@@ -245,7 +247,7 @@ func (s *PSQLPlainStorage) UpdatePlainSecretByName(ctx context.Context, ownerUUI
 	if data == nil {
 		_, err = s.db.ExecContext(ctx, "DELETE FROM plain_secret WHERE uuid = $1", secretUUID)
 	} else {
-		_, err = s.db.ExecContext(ctx, "INSERT INTO plain_secret (uuid, data) VALUES ($1, $2) ON CONFLICT (uuid) DO UPDATE SET data = $2", secretUUID, string(data))
+		_, err = s.db.ExecContext(ctx, "INSERT INTO plain_secret (uuid, data) VALUES ($1, $2) ON CONFLICT (uuid) DO UPDATE SET data = $2", secretUUID, data)
 	}
 
 	if err != nil {
@@ -281,17 +283,10 @@ func (s *PSQLPlainStorage) GetUserSecretByName(ctx context.Context, userUUID str
 		return nil, fmt.Errorf("error while get secret metadata: %w", err)
 	}
 
-	var (
-		dbSecretContent string
-		content         []byte
-	)
-	err = s.db.QueryRowContext(ctx, "SELECT data FROM plain_secret WHERE uuid = $1", secretUUID).Scan(&dbSecretContent)
+	var content []byte
+	err = s.db.QueryRowContext(ctx, "SELECT data FROM plain_secret WHERE uuid = $1", secretUUID).Scan(&content)
 	if err != nil && !errors.Is(sql.ErrNoRows, err) {
 		return nil, fmt.Errorf("error while get secret content: %w", err)
-	}
-
-	if dbSecretContent != "" {
-		content = []byte(dbSecretContent)
 	}
 
 	return &PlainSecret{

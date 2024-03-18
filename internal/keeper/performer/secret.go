@@ -104,6 +104,12 @@ func (p Secret) Execute(conn connector.ServiceConnector, sessional Sessional, lo
 			session: *sessional.GetSession(),
 			logger:  logger,
 		}
+	} else if secretType == SecretTypeText {
+		performer = &secretTextPerformer{
+			conn:    conn,
+			session: *sessional.GetSession(),
+			logger:  logger,
+		}
 	}
 
 	ctx := context.TODO()

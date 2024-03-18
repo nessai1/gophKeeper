@@ -59,7 +59,7 @@ func (s *Server) SecretDelete(ctx context.Context, request *pb.SecretDeleteReque
 		return nil, status.Error(codes.InvalidArgument, "invalid secret type got")
 	}
 
-	userSecret, err := s.plainStorage.GetUserSecretByName(ctx, user.Login, request.SecretName, secretType)
+	userSecret, err := s.plainStorage.GetUserSecretByName(ctx, user.UUID, request.SecretName, secretType)
 	if err != nil && errors.Is(plainstorage.ErrSecretNotFound, err) {
 		s.logger.Info("Cannot find secret by name", zap.String("login", user.Login), zap.String("secret_name", request.SecretName))
 

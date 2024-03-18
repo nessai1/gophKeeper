@@ -22,13 +22,13 @@ type GRPCServiceConnector struct {
 
 const uploadBlockSize = 256 * 524288 // ~0.5mb
 
-func (c *GRPCServiceConnector) UploadMedia(ctx context.Context, name string, reader io.Reader) (string, error) {
+func (c *GRPCServiceConnector) UploadMedia(ctx context.Context, name string, reader io.Reader, replace bool) (string, error) {
 	stream, err := c.client.UploadMediaSecret(ctx)
 	if err != nil {
 		return "", fmt.Errorf("cannot open stream for upload media sercret: %w", err)
 	}
 
-	md := pb.MediaSecretMetadata{Name: name}
+	md := pb.MediaSecretMetadata{Name: name, Overwrite: replace}
 
 	err = stream.Send(&pb.UploadMediaSecretRequest{Request: &pb.UploadMediaSecretRequest_Metadata{Metadata: &md}})
 	if err != nil {

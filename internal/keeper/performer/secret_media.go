@@ -23,6 +23,10 @@ type secretMediaPerformer struct {
 
 // Set encrypt by AES file with path == name and save it on external service
 func (p *secretMediaPerformer) Set(ctx context.Context, name string) error {
+	return p.uploadFile(ctx, name, false)
+}
+
+func (p *secretMediaPerformer) uploadFile(ctx context.Context, name string, replace bool) error {
 	file, err := os.Open(name)
 	if err != nil {
 		return fmt.Errorf("cannot find file '%s': %w", name, err)
@@ -43,7 +47,7 @@ func (p *secretMediaPerformer) Set(ctx context.Context, name string) error {
 	}
 
 	encryptedFile.Seek(0, 0)
-	id, err := p.conn.UploadMedia(ctx, filepath.Base(name), encryptedFile)
+	id, err := p.conn.UploadMedia(ctx, filepath.Base(name), encryptedFile, replace)
 	if err != nil {
 		p.logger.Error("Errror while upload new media", zap.String("filename", filepath.Base(name)), zap.Error(err))
 
@@ -57,7 +61,7 @@ func (p *secretMediaPerformer) Set(ctx context.Context, name string) error {
 	if err != nil {
 		p.logger.Error("cannot copy file to media dir", zap.Error(err))
 
-		return nil
+		return fmt.Errorf("cannot copy file to media dir: %w", err)
 	}
 
 	defer func() {
@@ -111,13 +115,30 @@ func (p *secretMediaPerformer) Get(ctx context.Context, name string) error {
 }
 
 func (p *secretMediaPerformer) Update(ctx context.Context, name string) error {
-	//TODO implement me
-	panic("implement me")
+	if p.isFileLoaded(name) {
+		err := p.Delete(ctx, name)
+		if err != nil {
+			p.logger.Error("Cannot delete old file", zap.Error(err))
+		}
+	}
+
+	return p.uploadFile(ctx, name, true)
 }
 
 func (p *secretMediaPerformer) Delete(ctx context.Context, name string) error {
-	//TODO implement me
-	panic("implement me")
+	err := p.conn.RemoveSecret(ctx, name, secret.SecretTypeMedia)
+	if err != nil {
+		return fmt.Errorf("cannot remove media secret: %w", err)
+	}
+
+	if p.isFileLoaded(name) {
+		err = os.Remove(filepath.Join(p.workDir, "media", name))
+		p.logger.Error("Cannot remove file from local storage", zap.Error(err), zap.String("filename", name))
+	}
+
+	fmt.Printf("\033[32mFile %s successfuly removed!\033[0m\n", name)
+
+	return nil
 }
 
 func (p *secretMediaPerformer) List(ctx context.Context) error {
@@ -126,6 +147,12 @@ func (p *secretMediaPerformer) List(ctx context.Context) error {
 		p.logger.Error("Cannot list media secrets", zap.Error(err))
 
 		return fmt.Errorf("cannot list media secrets: %w", err)
+	}
+
+	if len(secrets) == 0 {
+		fmt.Printf("No media found\n")
+
+		return nil
 	}
 
 	printable := make([]printableSecret, len(secrets))

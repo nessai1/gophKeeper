@@ -6,15 +6,13 @@ compile-keeper:
 	- rm -r keeper
 	mkdir keeper
 	cp ./keeper_config.example.json keeper/keeper_config.json
-	GOOS=windows GOARCH=amd64 go build -o keeper/keeper.exe -ldflags "-X main.Commit=$(COMMIT) -X 'main.BuildTime=$(BUILD_DATE)' -X main.Version=$(VERSION)" cmd/keeper/main.go
-	zip -r ./bin/keeper/keeper_win64.zip keeper
-	rm keeper/keeper.exe
-	GOOS=darwin GOARCH=amd64 go build -o keeper/keeper -ldflags "-X main.Commit=$(COMMIT) -X 'main.BuildTime=$(BUILD_DATE)' -X main.Version=$(VERSION)" cmd/keeper/main.go
-	zip -r ./bin/keeper/keeper_darwin-amd64.zip keeper
-	rm keeper/keeper
-	GOOS=darwin GOARCH=arm64 go build -o keeper/keeper -ldflags "-X main.Commit=$(COMMIT) -X 'main.BuildTime=$(BUILD_DATE)' -X main.Version=$(VERSION)" cmd/keeper/main.go
-	zip -r ./bin/keeper/keeper_darwin-arm.zip keeper
-	rm keeper/keeper
-	GOOS=linux GOARCH=amd64 go build -o keeper/keeper -ldflags "-X main.Commit=$(COMMIT) -X 'main.BuildTime=$(BUILD_DATE)' -X main.Version=$(VERSION)" cmd/keeper/main.go
-	zip -r ./bin/keeper/keeper_linux.zip keeper
+	$(MAKE) build-bin GOOS=windows GOARCH=amd64 BIN_NAME=keeper.exe BUILD_NAME=win64
+	$(MAKE) build-bin GOOS=darwin GOARCH=amd64 BIN_NAME=keeper BUILD_NAME=darwin-amd64
+	$(MAKE) build-bin GOOS=darwin GOARCH=arm64 BIN_NAME=keeper BUILD_NAME=darwin-arm
+	$(MAKE) build-bin GOOS=linux GOARCH=amd64 BIN_NAME=keeper BUILD_NAME=linux
 	rm -r keeper
+
+build-bin:
+	GOOS=$(GOOS) GOARCH=$(GOARCH) go build -o keeper/$(BIN_NAME) -ldflags "-X main.Commit=$(COMMIT) -X 'main.BuildTime=$(BUILD_DATE)' -X main.Version=$(VERSION)" cmd/keeper/main.go
+	zip -r ./bin/keeper/keeper_$(BUILD_NAME).zip keeper
+	rm keeper/$(BIN_NAME)

@@ -1,11 +1,13 @@
 package service
 
 import (
+	"fmt"
 	"github.com/nessai1/gophkeeper/internal/service/config"
 	"github.com/nessai1/gophkeeper/internal/service/mediastorage"
 	"github.com/nessai1/gophkeeper/internal/service/plainstorage"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"log"
 	"net"
 	"os"
@@ -68,13 +70,32 @@ func Run() {
 		logger:       l,
 		config:       c,
 	}
-	gRPCServer := grpc.NewServer(grpc.UnaryInterceptor(server.unaryAuthInterceptor), grpc.StreamInterceptor(server.streamAuthInterceptor))
+
+	serverOptions := []grpc.ServerOption{grpc.UnaryInterceptor(server.unaryAuthInterceptor), grpc.StreamInterceptor(server.streamAuthInterceptor)}
+	if c.TLSCredentials != nil {
+		creds, err := buildTLSCredentials(c.TLSCredentials)
+		if err != nil {
+			log.Fatalf("Cannot run secure server: %w", err.Error())
+		}
+		serverOptions = append(serverOptions, grpc.Creds(creds))
+		log.Println("Server runs on TLS")
+	}
+	gRPCServer := grpc.NewServer(serverOptions...)
 	pb.RegisterKeeperServiceServer(gRPCServer, &server)
 
 	log.Printf("Service started at %s", c.Address)
 	if err := gRPCServer.Serve(listen); err != nil {
 		log.Fatalf("Error while run gRPC server: %s", err.Error())
 	}
+}
+
+func buildTLSCredentials(creds *config.TLSCredentials) (credentials.TransportCredentials, error) {
+	transportCreds, err := credentials.NewServerTLSFromFile(creds.Crt, creds.Key)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create TLS credentials by certifcate and key files: %w", err)
+	}
+
+	return transportCreds, nil
 }
 
 type Server struct {

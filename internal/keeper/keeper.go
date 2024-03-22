@@ -67,7 +67,7 @@ func NewApplication(config Config) (*Application, error) {
 		return nil, fmt.Errorf("error while build logger file %s with mode %s: %w", stat.Name(), config.Mode, err)
 	}
 
-	gRPCConnector, err := connector.CreateGRPCConnector(config.ServerAddr)
+	gRPCConnector, err := connector.CreateGRPCConnector(config.ServerAddr, config.Certificate)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to the external service: %w", err)
 	}

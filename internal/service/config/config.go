@@ -13,6 +13,8 @@ type Config struct {
 	Address     string `json:"service_address"`
 	SecretToken string `json:"secret_token"`
 
+	TLSCredentials *TLSCredentials `json:"tls_credentials"`
+
 	PlainStorageConfig *PlainStorageConfig `json:"plain_storage"`
 
 	S3Config *S3Config `json:"s3"`
@@ -20,6 +22,14 @@ type Config struct {
 	FileConfigPath string
 
 	SignSecret string
+}
+
+type TLSCredentials struct {
+	// Path to server crt file
+	Crt string `json:"crt"`
+
+	// Path to server key file
+	Key string `json:"key"`
 }
 
 type S3Config struct {

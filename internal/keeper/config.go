@@ -16,6 +16,9 @@ type Config struct {
 	WorkDir    string                  `json:"work_dir"`
 	Mode       logger.ApplicationLevel `json:"mode"`
 	ServerAddr string                  `json:"server"`
+
+	// Path to certificate if server has TLS connection
+	Certificate string `json:"certificate"`
 }
 
 func fetchConfig() (Config, error) {
@@ -53,6 +56,10 @@ func fetchConfig() (Config, error) {
 
 	if fileCfg.Mode != "" {
 		cfg.Mode = fileCfg.Mode
+	}
+
+	if fileCfg.Certificate != "" {
+		cfg.Certificate = fileCfg.Certificate
 	}
 
 	return cfg, nil

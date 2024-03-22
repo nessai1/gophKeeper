@@ -6,6 +6,7 @@ import (
 	pb "github.com/nessai1/gophkeeper/api/proto"
 	"github.com/nessai1/gophkeeper/internal/keeper/secret"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 	"io"
@@ -65,11 +66,23 @@ func (c *GRPCServiceConnector) UploadMedia(ctx context.Context, name string, rea
 	return res.Uuid, nil
 }
 
-func CreateGRPCConnector(serviceAddr string) (*GRPCServiceConnector, error) {
+func CreateGRPCConnector(serviceAddr, CertificateTLSFilePath string) (*GRPCServiceConnector, error) {
 	server := &GRPCServiceConnector{}
+
+	var creds credentials.TransportCredentials
+	if CertificateTLSFilePath == "" {
+		creds = insecure.NewCredentials()
+	} else {
+		var err error
+		creds, err = buildTLSCredentials(CertificateTLSFilePath)
+		if err != nil {
+			return nil, fmt.Errorf("cannot build GRPC connector")
+		}
+	}
+
 	conn, err := grpc.Dial(
 		serviceAddr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithTransportCredentials(creds),
 		grpc.WithUnaryInterceptor(server.unaryAuthInterceptor),
 		grpc.WithStreamInterceptor(server.streamAuthInterceptor),
 	)
@@ -81,6 +94,15 @@ func CreateGRPCConnector(serviceAddr string) (*GRPCServiceConnector, error) {
 	server.client = pb.NewKeeperServiceClient(conn)
 
 	return server, nil
+}
+
+func buildTLSCredentials(crtPath string) (credentials.TransportCredentials, error) {
+	creds, err := credentials.NewClientTLSFromFile(crtPath, "")
+	if err != nil {
+		return nil, fmt.Errorf("cannot build TLS credentials from certificate file: %w", err)
+	}
+
+	return creds, nil
 }
 
 func (c *GRPCServiceConnector) unaryAuthInterceptor(ctx context.Context, method string, req interface{},

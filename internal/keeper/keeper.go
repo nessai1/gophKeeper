@@ -121,10 +121,7 @@ func (a *Application) Run() error {
 
 	a.logger.Info("Application was started", zap.Bool("with_session", currentSession != nil))
 
-	var (
-		found       bool
-		requireExit bool
-	)
+	var requireExit bool
 	for {
 		cmd, err := command.ReadCommand()
 		if err != nil {
@@ -133,25 +130,21 @@ func (a *Application) Run() error {
 		if cmd.Name == "" {
 			continue
 		}
-
-		found = false
 		err = nil
-		for _, p := range performer.AvailablePerformers {
-			if p.GetName() == cmd.Name {
-				found = true
 
-				requireExit, err = p.Execute(
-					a.connector,
-					a,
-					a.logger,
-					cmd.Args,
-					a.config.WorkDir,
-				)
-			}
-		}
-		if !found {
+		p, ok := performer.AvailablePerformers[cmd.Name]
+		if !ok {
 			fmt.Printf("\033[31mCommand '%s' not found!\033[0m\n", cmd.Name)
+			continue
 		}
+
+		requireExit, err = p.Execute(
+			a.connector,
+			a,
+			a.logger,
+			cmd.Args,
+			a.config.WorkDir,
+		)
 
 		if err != nil {
 			fmt.Printf("\033[31mError: %s\033[0m\n", err.Error())

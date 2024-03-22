@@ -50,12 +50,11 @@ func (p Help) printCommandsList() {
 }
 
 func (p Help) printCommandDetails(commandName string) error {
-	for _, val := range AvailablePerformers {
-		if val.GetName() == commandName {
-			fmt.Printf("Command: %s\nPattern: %s\n\n%s\n", val.GetName(), val.GetStruct(), val.GetDetailDescription())
-			return nil
-		}
+	val, ok := AvailablePerformers[commandName]
+	if !ok {
+		return fmt.Errorf("undefined command '%s'", commandName)
 	}
 
-	return fmt.Errorf("undefined command '%s'", commandName)
+	fmt.Printf("Command: %s\nPattern: %s\n\n%s\n", val.GetName(), val.GetStruct(), val.GetDetailDescription())
+	return nil
 }

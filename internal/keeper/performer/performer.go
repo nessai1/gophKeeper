@@ -27,12 +27,12 @@ type Performer interface {
 	) (requireExit bool, err error)
 }
 
-var AvailablePerformers = []Performer{
-	Help{},
-	Exit{},
-	Ping{},
-	Register{},
-	Login{},
-	Logout{},
-	Secret{},
+var AvailablePerformers = map[string]Performer{
+	Help.GetName(Help{}):         Help{},
+	Exit.GetName(Exit{}):         Exit{},
+	Ping.GetName(Ping{}):         Ping{},
+	Register.GetName(Register{}): Register{},
+	Login.GetName(Login{}):       Login{},
+	Logout.GetName(Logout{}):     Logout{},
+	Secret.GetName(Secret{}):     Secret{},
 }

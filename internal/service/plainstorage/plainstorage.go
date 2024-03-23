@@ -45,14 +45,14 @@ type User struct {
 }
 
 type SecretMetadata struct {
-	UUID     string
-	UserUUID string
+	UUID     string `db:"uuid"`
+	UserUUID string `db:"owner_uuid"`
 
 	// Name for plains - title, for media - filename
-	Name string
+	Name string `db:"name"`
 
-	Type SecretType
+	Type SecretType `db:"type"`
 
-	Created time.Time
-	Updated time.Time
+	Created time.Time `db:"created"`
+	Updated time.Time `db:"updated"`
 }

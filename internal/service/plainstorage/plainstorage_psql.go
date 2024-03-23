@@ -8,6 +8,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jmoiron/sqlx"
 	"github.com/nessai1/gophkeeper/internal/service/config"
 	"github.com/nessai1/gophkeeper/pkg/postgrescodes"
 	"go.uber.org/zap"
@@ -22,7 +23,7 @@ import (
 
 type PSQLPlainStorage struct {
 	config config.PSQLPlainStorageConfig
-	db     *sql.DB
+	db     *sqlx.DB
 	logger *zap.Logger
 }
 
@@ -54,7 +55,7 @@ func NewPSQLPlainStorage(cfg config.PSQLPlainStorageConfig, l *zap.Logger) (*PSQ
 
 	return &PSQLPlainStorage{
 		config: cfg,
-		db:     db,
+		db:     sqlx.NewDb(db, "pgx"),
 		logger: l,
 	}, nil
 }
@@ -134,33 +135,22 @@ func (s *PSQLPlainStorage) CreateUser(ctx context.Context, login string, passwor
 }
 
 func (s *PSQLPlainStorage) GetUserSecretsMetadataByType(ctx context.Context, userUUID string, secretType SecretType) ([]SecretMetadata, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT uuid, name, created, updated FROM secret_metadata WHERE owner_uuid = $1 AND type = $2", userUUID, secretType)
+	query := `SELECT uuid, owner_uuid, name, type, created, updated FROM secret_metadata WHERE owner_uuid = ? AND type = ?`
+	query, args, err := sqlx.In(query, userUUID, secretType)
 	if err != nil {
-		return nil, fmt.Errorf("cannot get user secrets by type: %w", err)
+		s.logger.Error("Error preparing list secrets query", zap.Error(err))
+
+		return nil, fmt.Errorf("error preparing list secrets query: %w", err)
 	}
 
-	secrets := make([]SecretMetadata, 0)
-	defer func() {
-		err := rows.Close()
-		if err != nil {
-			s.logger.Error("Cannot close rows in secrets list query", zap.Error(err))
-		}
-	}()
+	query = s.db.Rebind(query)
 
-	for rows.Next() {
-		secret := SecretMetadata{
-			UserUUID: userUUID,
-			Type:     secretType,
-		}
+	var secrets []SecretMetadata
+	err = s.db.Select(&secrets, query, args...)
+	if err != nil {
+		s.logger.Error("Error while get list of secrets", zap.Error(err))
 
-		err := rows.Scan(&secret.UUID, &secret.Name, &secret.Created, &secret.Updated)
-		if err != nil {
-			s.logger.Error("Error while fetch row from secrets list query", zap.Error(err))
-
-			continue
-		}
-
-		secrets = append(secrets, secret)
+		return nil, fmt.Errorf("error while get list of secrets")
 	}
 
 	return secrets, nil

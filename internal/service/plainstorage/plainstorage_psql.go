@@ -78,6 +78,34 @@ func initPSQLMigrations(db *sql.DB) error {
 	return nil
 }
 
+func (s *PSQLPlainStorage) InTransaction(ctx context.Context, transaction func() error) error {
+	tx, txErr := s.db.BeginTx(ctx, nil)
+	if txErr != nil {
+		return fmt.Errorf("cannot start intransaction: %w", txErr)
+	}
+
+	err := transaction()
+	if err != nil {
+		txErr := tx.Rollback()
+		if txErr != nil {
+			s.logger.Error("Cannot rollback intransaction", zap.Error(txErr))
+
+			return errors.Join(err, fmt.Errorf("cannot rollback intransaction: %w", txErr))
+		}
+
+		return err
+	}
+
+	txErr = tx.Commit()
+	if txErr != nil {
+		s.logger.Error("Cannot commit intransaction", zap.Error(txErr))
+
+		return fmt.Errorf("cannot commit intransaction: %w", txErr)
+	}
+
+	return nil
+}
+
 func (s *PSQLPlainStorage) GetUserByLogin(ctx context.Context, login string) (*User, error) {
 	var user User
 	err := s.db.QueryRowContext(
@@ -146,7 +174,7 @@ func (s *PSQLPlainStorage) GetUserSecretsMetadataByType(ctx context.Context, use
 	query = s.db.Rebind(query)
 
 	var secrets []SecretMetadata
-	err = s.db.Select(&secrets, query, args...)
+	err = s.db.SelectContext(ctx, &secrets, query, args...)
 	if err != nil {
 		s.logger.Error("Error while get list of secrets", zap.Error(err))
 
@@ -177,6 +205,20 @@ func (s *PSQLPlainStorage) AddSecretMetadata(ctx context.Context, userUUID strin
 		Name:     name,
 		Type:     dataType,
 	}, nil
+}
+
+func (s *PSQLPlainStorage) UpdateSecretMetadataUUID(ctx context.Context, userUUID string, oldUUID string, newUUID string, dataType SecretType) error {
+	res, err := s.db.ExecContext(ctx, "UPDATE secret_metadata SET uuid = $1, updated = now() WHERE owner_uuid = $2 AND type = $3 AND uuid = $4", newUUID, userUUID, dataType, oldUUID)
+	if err != nil {
+		return fmt.Errorf("cannot make update query: %w", err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if rowsAffected == 0 {
+		return ErrEntityNotFound
+	}
+
+	return nil
 }
 
 func (s *PSQLPlainStorage) RemoveSecretByUUID(ctx context.Context, secretUUID string) error {

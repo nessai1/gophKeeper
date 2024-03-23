@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	pb "github.com/nessai1/gophkeeper/api/proto"
 	"github.com/nessai1/gophkeeper/internal/service/plainstorage"
 	"github.com/nessai1/gophkeeper/pkg/bytesize"
@@ -34,40 +35,59 @@ func (s *Server) UploadMediaSecret(stream pb.KeeperService_UploadMediaSecretServ
 
 	s.logger.Info("User sends new media", zap.String("login", user.Login), zap.String("filename", metadata.Name))
 
-	var dbMetadata *plainstorage.SecretMetadata
+	mediaUUID := uuid.New().String()
+	var completeUpload func() error
+	secret, getSecretErr := s.plainStorage.GetUserSecretByName(stream.Context(), user.UUID, metadata.Name, plainstorage.SecretTypeMedia)
+	if getSecretErr != nil && !errors.Is(plainstorage.ErrEntityNotFound, getSecretErr) {
+		s.logger.Error("Cannot check existing media secret", zap.Error(getSecretErr), zap.String("login", user.Login), zap.String("filename", metadata.Name))
+
+		return status.Errorf(codes.Internal, "Cannot check existing media secret '%s'", metadata.Name)
+	}
+
 	if metadata.Overwrite {
-		secret, err := s.plainStorage.GetUserSecretByName(stream.Context(), user.UUID, metadata.Name, plainstorage.SecretTypeMedia)
-		if err != nil && errors.Is(plainstorage.ErrEntityNotFound, err) {
-			return status.Errorf(codes.NotFound, "updating secret '%s' doesn't exists", metadata.Name)
-		}
-		dbMetadata = &secret.Metadata
+		if getSecretErr != nil && errors.Is(plainstorage.ErrEntityNotFound, getSecretErr) {
+			s.logger.Info("Cannot overwrite not existing media", zap.String("login", user.Login), zap.String("filename", metadata.Name))
 
-		err = s.plainStorage.UpdatePlainSecretByName(stream.Context(), user.UUID, metadata.Name, nil)
-		if err != nil {
-			s.logger.Error("Cannot update media secret metadata", zap.Error(err))
-
-			return status.Error(codes.Internal, "cannot update media metadata")
+			return status.Errorf(codes.NotFound, "Cannot overwrite not existing media '%s'", metadata.Name)
 		}
 
 		s.logger.Info("Start remove old media secret", zap.String("filename", metadata.Name))
-		err = s.mediaStorage.Delete(stream.Context(), dbMetadata.UUID)
-		if err != nil {
-			s.logger.Error("cannot remove old media secret", zap.String("filename", metadata.Name), zap.String("media_uuid", dbMetadata.UUID))
+
+		completeUpload = func() error {
+			err := s.plainStorage.UpdateSecretMetadataUUID(stream.Context(), user.UUID, secret.Metadata.UUID, mediaUUID, plainstorage.SecretTypeMedia)
+			if err != nil {
+				s.logger.Error("Cannot update plain storage to new media UUID", zap.Error(err), zap.String("filename", metadata.Name), zap.String("login", user.Login))
+
+				return status.Errorf(codes.Internal, "cannot update plain storage for new media UUID")
+			}
+
+			go func() {
+				err := s.mediaStorage.Delete(context.TODO(), secret.Metadata.UUID)
+				if err != nil {
+					s.logger.Error("Cannot delete old media", zap.Error(err), zap.String("filename", metadata.Name), zap.String("login", user.Login))
+				}
+			}()
+
+			return nil
 		}
 	} else {
-		dbMetadata, err = s.plainStorage.AddSecretMetadata(stream.Context(), user.UUID, metadata.Name, plainstorage.SecretTypeMedia)
-		if err != nil && errors.Is(plainstorage.ErrEntityAlreadyExists, err) {
-			s.logger.Info("User try to add existing media", zap.String("filename", metadata.Name), zap.String("login", user.Login))
+		if !errors.Is(plainstorage.ErrEntityNotFound, getSecretErr) {
+			s.logger.Info("User try to create existing media", zap.String("login", user.Login), zap.String("filename", metadata.Name))
 
-			return status.Error(codes.AlreadyExists, "cannot create media with existing name, use update method")
-		} else if err != nil {
-			s.logger.Error("Error while save metadata of secret", zap.Error(err))
+			return status.Errorf(codes.AlreadyExists, "Cannot create existing media secret '%s'", metadata.Name)
+		}
 
-			return status.Error(codes.Internal, "cannot update media metadata")
+		completeUpload = func() error {
+			_, err := s.plainStorage.AddSecretMetadata(stream.Context(), user.UUID, metadata.Name, plainstorage.SecretTypeMedia)
+			if err != nil {
+				return status.Error(codes.Internal, "Cannot add secret media to plain storage")
+			}
+
+			return nil
 		}
 	}
 
-	upload, err := s.mediaStorage.StartUpload(stream.Context(), dbMetadata.UUID)
+	upload, err := s.mediaStorage.StartUpload(stream.Context(), mediaUUID)
 	if err != nil {
 		s.logger.Error("Cannot start media upload", zap.Error(err))
 	}
@@ -77,11 +97,6 @@ func (s *Server) UploadMediaSecret(stream pb.KeeperService_UploadMediaSecretServ
 		err = upload.Abort(context.TODO())
 		if err != nil {
 			s.logger.Error("Error while abort media upload", zap.Error(err))
-		}
-
-		err = s.plainStorage.RemoveSecretByUUID(context.TODO(), dbMetadata.UUID)
-		if err != nil {
-			s.logger.Error("Error while remove secret metadata", zap.Error(err))
 		}
 	}
 
@@ -120,9 +135,14 @@ func (s *Server) UploadMediaSecret(stream pb.KeeperService_UploadMediaSecretServ
 		return status.Error(codes.Internal, "server cannot complete data upload")
 	}
 
+	err = completeUpload()
+	if err != nil {
+		return err
+	}
+
 	return stream.SendAndClose(&pb.UploadMediaSecretResponse{
-		Uuid: dbMetadata.UUID,
-		Name: dbMetadata.Name,
+		Uuid: mediaUUID,
+		Name: metadata.Name,
 	})
 }
 

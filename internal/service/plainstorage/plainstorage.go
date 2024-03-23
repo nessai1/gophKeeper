@@ -16,6 +16,8 @@ const (
 type SecretType uint8
 
 type PlainStorage interface {
+	InTransaction(ctx context.Context, transaction func() error) error
+
 	GetUserByLogin(ctx context.Context, login string) (*User, error)
 	GetUserByUUID(ctx context.Context, login string) (*User, error)
 	CreateUser(ctx context.Context, login string, password string) (*User, error)
@@ -23,6 +25,8 @@ type PlainStorage interface {
 
 	AddSecretMetadata(ctx context.Context, userUUID string, name string, dataType SecretType) (*SecretMetadata, error)
 	AddPlainSecret(ctx context.Context, userUUID string, name string, dataType SecretType, data []byte) (*PlainSecret, error)
+
+	UpdateSecretMetadataUUID(ctx context.Context, userUUID string, oldUUID string, newUUID string, dataType SecretType) error
 
 	UpdatePlainSecretByName(ctx context.Context, ownerUUID string, name string, data []byte) error
 	RemoveSecretByUUID(ctx context.Context, secretUUID string) error

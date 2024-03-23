@@ -7,11 +7,13 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"sync"
 )
 
 type Config struct {
 	Address     string `json:"service_address"`
 	SecretToken string `json:"secret_token"`
+	Salt        string `json:"salt"`
 
 	TLSCredentials *TLSCredentials `json:"tls_credentials"`
 
@@ -57,7 +59,21 @@ type S3Credentials struct {
 	SecretAccessKey string `json:"secret_access_key"`
 }
 
+var (
+	once   sync.Once
+	cfg    Config
+	cfgErr error
+)
+
 func FetchConfig() (Config, error) {
+	once.Do(func() {
+		cfg, cfgErr = loadConfig()
+	})
+
+	return cfg, cfgErr
+}
+
+func loadConfig() (Config, error) {
 	flagConfig := fetchFlagConfig()
 
 	fileConfig, err := fetchFileConfig(flagConfig.FileConfigPath)

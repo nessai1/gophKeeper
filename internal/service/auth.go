@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"github.com/nessai1/gophkeeper/internal/service/config"
 	"github.com/nessai1/gophkeeper/internal/service/plainstorage"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -162,8 +163,13 @@ func generateSign(UUID, secret string) (string, error) {
 	return tokenString, nil
 }
 
-func hashPassword(pwd string) string {
-	hash := sha256.Sum256([]byte(pwd + "myGophkeeperSaltlol"))
+func hashPassword(pwd string) (string, error) {
+	cfg, err := config.FetchConfig()
+	if err != nil {
+		return "", fmt.Errorf("cannot load config for get salt: %w", err)
+	}
 
-	return fmt.Sprintf("%x", hash)
+	hash := sha256.Sum256([]byte(pwd + cfg.Salt))
+
+	return fmt.Sprintf("%x", hash), nil
 }

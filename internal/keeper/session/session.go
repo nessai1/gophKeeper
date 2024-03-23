@@ -33,6 +33,7 @@ func NewSession(login, password, serviceToken string) Session {
 	}
 }
 
+// hashPassword hash password for validation of next user session by comparing local password
 func hashPassword(password string) string {
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(password+"keepersession123")))
 }

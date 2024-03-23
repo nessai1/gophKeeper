@@ -1,6 +1,7 @@
 {
   "service_address": "0.0.0.0:7676",
   "secret_token": "some_secret_token",
+  "salt": "some_service_salt_for_passwords",
 
   "logger": {
     "level": "dev",

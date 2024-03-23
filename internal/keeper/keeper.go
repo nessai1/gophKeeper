@@ -170,14 +170,6 @@ func (a *Application) Run() error {
 	}
 }
 
-func (a *Application) getPerformers() {
-	if a.session != nil {
-
-	} else {
-
-	}
-}
-
 func (a *Application) SetSession(s *session.Session) {
 	a.session = s
 

@@ -37,7 +37,7 @@ func (s *Server) UploadMediaSecret(stream pb.KeeperService_UploadMediaSecretServ
 	var dbMetadata *plainstorage.SecretMetadata
 	if metadata.Overwrite {
 		secret, err := s.plainStorage.GetUserSecretByName(stream.Context(), user.UUID, metadata.Name, plainstorage.SecretTypeMedia)
-		if err != nil && errors.Is(plainstorage.ErrSecretNotFound, err) {
+		if err != nil && errors.Is(plainstorage.ErrEntityNotFound, err) {
 			return status.Errorf(codes.NotFound, "updating secret '%s' doesn't exists", metadata.Name)
 		}
 		dbMetadata = &secret.Metadata
@@ -56,7 +56,11 @@ func (s *Server) UploadMediaSecret(stream pb.KeeperService_UploadMediaSecretServ
 		}
 	} else {
 		dbMetadata, err = s.plainStorage.AddSecretMetadata(stream.Context(), user.UUID, metadata.Name, plainstorage.SecretTypeMedia)
-		if err != nil {
+		if err != nil && errors.Is(plainstorage.ErrEntityAlreadyExists, err) {
+			s.logger.Info("User try to add existing media", zap.String("filename", metadata.Name), zap.String("login", user.Login))
+
+			return status.Error(codes.AlreadyExists, "cannot create media with existing name, use update method")
+		} else if err != nil {
 			s.logger.Error("Error while save metadata of secret", zap.Error(err))
 
 			return status.Error(codes.Internal, "cannot update media metadata")
@@ -129,7 +133,7 @@ func (s *Server) DownloadMediaSecret(req *pb.DownloadMediaSecretRequest, stream 
 	s.logger.Info("User try to get media", zap.String("login", user.Login), zap.String("filename", req.SecretName))
 
 	secret, err := s.plainStorage.GetUserSecretByName(stream.Context(), user.UUID, req.SecretName, plainstorage.SecretTypeMedia)
-	if errors.Is(plainstorage.ErrSecretNotFound, err) {
+	if errors.Is(plainstorage.ErrEntityNotFound, err) {
 		s.logger.Info("User try to get not existing media-secret", zap.String("login", user.UUID), zap.String("filaname", req.SecretName))
 
 		return status.Errorf(codes.NotFound, "cannot found secret with name %s", req.SecretName)

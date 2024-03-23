@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS secret_metadata (
     name varchar(255) not null,
     type smallint not null,
     created timestamp not null default now(),
-    updated timestamp not null default now()
+    updated timestamp not null default now(),
+    UNIQUE(name, type)
 );
 
 CREATE TABLE IF NOT EXISTS plain_secret (

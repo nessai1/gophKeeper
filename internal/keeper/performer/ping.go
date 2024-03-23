@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/nessai1/gophkeeper/internal/keeper/connector"
 	"go.uber.org/zap"
+	"time"
 )
 
 type Ping struct {
@@ -27,13 +28,19 @@ func (p Ping) GetDetailDescription() string {
 }
 
 func (p Ping) Execute(conn connector.ServiceConnector, _ Sessional, logger *zap.Logger, _ []string, _ string) (requireExit bool, err error) {
-	answer, err := conn.Ping(context.TODO())
+	ctx, cancelContext := context.WithTimeout(context.Background(), time.Second*30)
+	defer func() {
+		cancelContext()
+	}()
+
+	answer, err := conn.Ping(ctx)
 	if err != nil {
 		logger.Error("Error while ping service", zap.Error(err))
+
 		return false, fmt.Errorf("ping error: %w", err)
-	} else {
-		fmt.Printf("Answer: %s\n", answer)
 	}
+
+	fmt.Printf("Answer: %s\n", answer)
 
 	return false, nil
 }

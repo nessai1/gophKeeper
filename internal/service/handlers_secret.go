@@ -60,7 +60,7 @@ func (s *Server) SecretDelete(ctx context.Context, request *pb.SecretDeleteReque
 	}
 
 	userSecret, err := s.plainStorage.GetUserSecretByName(ctx, user.UUID, request.SecretName, secretType)
-	if err != nil && errors.Is(plainstorage.ErrSecretNotFound, err) {
+	if err != nil && errors.Is(plainstorage.ErrEntityNotFound, err) {
 		s.logger.Info("Cannot find secret by name", zap.String("login", user.Login), zap.String("secret_name", request.SecretName))
 
 		return nil, status.Errorf(codes.NotFound, "secret '%s' not found", request.SecretName)
@@ -109,7 +109,11 @@ func (s *Server) SecretSet(ctx context.Context, request *pb.SecretSetRequest) (*
 	}
 
 	_, err = s.plainStorage.AddPlainSecret(ctx, user.UUID, request.Name, secretType, request.Content)
-	if err != nil {
+	if err != nil && errors.Is(plainstorage.ErrEntityAlreadyExists, err) {
+		s.logger.Info("User try to add existing secret", zap.String("secret_name", request.GetName()), zap.String("secret_type", request.GetSecretType().String()))
+
+		return nil, status.Error(codes.AlreadyExists, "secret with name already exists")
+	} else if err != nil {
 		s.logger.Error("Cannot add plain secret", zap.String("login", user.Login), zap.Error(err))
 
 		return nil, status.Error(codes.Internal, "internal error while save secret")
@@ -138,7 +142,7 @@ func (s *Server) SecretGet(ctx context.Context, request *pb.SecretGetRequest) (*
 	}
 
 	secret, err := s.plainStorage.GetUserSecretByName(ctx, user.UUID, request.GetName(), secretType)
-	if err != nil && errors.Is(plainstorage.ErrSecretNotFound, err) {
+	if err != nil && errors.Is(plainstorage.ErrEntityNotFound, err) {
 		s.logger.Info("Cannot find secret by name", zap.String("login", user.Login), zap.String("secret_name", request.GetName()))
 
 		return nil, status.Errorf(codes.NotFound, "secret '%s' not found", request.GetName())

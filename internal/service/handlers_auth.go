@@ -20,20 +20,13 @@ func (s *Server) Ping(ctx context.Context, request *pb.PingRequest) (*pb.PingRes
 }
 
 func (s *Server) Register(ctx context.Context, request *pb.UserCredentialsRequest) (*pb.UserCredentialsResponse, error) {
-	_, err := s.plainStorage.GetUserByLogin(ctx, request.Login)
-	if err != nil && !errors.Is(err, plainstorage.ErrUserNotFound) {
-		s.logger.Error("Unexpected error while register user (getting user)", zap.Error(err))
-
-		return nil, status.Error(codes.Internal, "Unexpected error while get user")
-	} else if err == nil {
-		s.logger.Info("Duplicate registration", zap.String("login", request.Login))
+	user, err := s.plainStorage.CreateUser(ctx, request.Login, hashPassword(request.Password))
+	if err != nil && errors.Is(plainstorage.ErrEntityAlreadyExists, err) {
+		s.logger.Info("User try to register existing login", zap.String("login", request.Login))
 
 		return nil, status.Error(codes.AlreadyExists, "User already exists")
-	}
-
-	user, err := s.plainStorage.CreateUser(ctx, request.Login, hashPassword(request.Password))
-	if err != nil {
-		s.logger.Error("Error while create new user", zap.Error(err))
+	} else if err != nil {
+		s.logger.Error("Got unexpected error while create user", zap.Error(err))
 
 		return nil, status.Error(codes.Internal, "Unexpected error while create user")
 	}
@@ -52,11 +45,11 @@ func (s *Server) Register(ctx context.Context, request *pb.UserCredentialsReques
 
 func (s *Server) Login(ctx context.Context, request *pb.UserCredentialsRequest) (*pb.UserCredentialsResponse, error) {
 	user, err := s.plainStorage.GetUserByLogin(ctx, request.Login)
-	if err != nil && !errors.Is(plainstorage.ErrUserNotFound, err) {
+	if err != nil && !errors.Is(plainstorage.ErrEntityNotFound, err) {
 		s.logger.Error("Error while get user for log-in", zap.Error(err))
 
 		return nil, status.Error(codes.Internal, "Unexpected error while get user for log-in")
-	} else if errors.Is(plainstorage.ErrUserNotFound, err) {
+	} else if errors.Is(plainstorage.ErrEntityNotFound, err) {
 		s.logger.Info("User try to log-in not exists account", zap.String("login", request.Login))
 
 		return nil, status.Error(codes.NotFound, "Account doesn't exists")

@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nessai1/gophkeeper/internal/service/config"
+	"github.com/nessai1/gophkeeper/pkg/postgrescodes"
 	"go.uber.org/zap"
 	"time"
 
@@ -84,7 +86,7 @@ func (s *PSQLPlainStorage) GetUserByLogin(ctx context.Context, login string) (*U
 	).Scan(&user.UUID, &user.Login, &user.PasswordHash)
 
 	if err != nil && errors.Is(sql.ErrNoRows, err) {
-		return nil, ErrUserNotFound
+		return nil, ErrEntityNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("cannot get user by login: %w", err)
 	}
@@ -101,7 +103,7 @@ func (s *PSQLPlainStorage) GetUserByUUID(ctx context.Context, uuid string) (*Use
 	).Scan(&user.UUID, &user.Login, &user.PasswordHash)
 
 	if err != nil && errors.Is(sql.ErrNoRows, err) {
-		return nil, ErrUserNotFound
+		return nil, ErrEntityNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("cannot get user by uuid: %w", err)
 	}
@@ -114,6 +116,13 @@ func (s *PSQLPlainStorage) CreateUser(ctx context.Context, login string, passwor
 	_, err := s.db.ExecContext(ctx, "INSERT INTO users (uuid, login, password) VALUES ($1, $2, $3)", userUUID, login, password)
 
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == postgrescodes.PostgresErrCodeUniqueViolation {
+				return nil, ErrEntityAlreadyExists
+			}
+		}
+
 		return nil, fmt.Errorf("cannot create user: %w", err)
 	}
 
@@ -162,6 +171,13 @@ func (s *PSQLPlainStorage) AddSecretMetadata(ctx context.Context, userUUID strin
 	_, err := s.db.ExecContext(ctx, "INSERT INTO secret_metadata (uuid, owner_uuid, name, type) VALUES ($1, $2, $3, $4)", dataUUID, userUUID, name, dataType)
 
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == postgrescodes.PostgresErrCodeUniqueViolation {
+				return nil, ErrEntityAlreadyExists
+			}
+		}
+
 		return nil, fmt.Errorf("cannot create secret metadata: %w", err)
 	}
 
@@ -196,6 +212,10 @@ func (s *PSQLPlainStorage) AddPlainSecret(ctx context.Context, userUUID string, 
 			s.logger.Error("Cannot rollback create secret transaction", zap.Error(err))
 		}
 
+		if errors.Is(ErrEntityAlreadyExists, err) {
+			return nil, ErrEntityAlreadyExists
+		}
+
 		return nil, fmt.Errorf("cannot create metadata of plain secret: %w", err)
 	}
 
@@ -224,7 +244,7 @@ func (s *PSQLPlainStorage) UpdatePlainSecretByName(ctx context.Context, ownerUUI
 	var secretUUID string
 	err := s.db.QueryRowContext(ctx, "SELECT uuid FROM secret_metadata WHERE owner_uuid = $1 AND name = $2", ownerUUID, name).Scan(&secretUUID)
 	if err != nil && errors.Is(sql.ErrNoRows, err) {
-		return ErrSecretNotFound
+		return ErrEntityNotFound
 	} else if err != nil {
 		return fmt.Errorf("error while get secret metadata: %w", err)
 	}
@@ -278,7 +298,7 @@ func (s *PSQLPlainStorage) GetUserSecretByName(ctx context.Context, userUUID str
 		Scan(&secretUUID, &created, &updated)
 
 	if errors.Is(sql.ErrNoRows, err) {
-		return nil, ErrSecretNotFound
+		return nil, ErrEntityNotFound
 	} else if err != nil {
 		return nil, fmt.Errorf("error while get secret metadata: %w", err)
 	}

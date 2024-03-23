@@ -9,11 +9,11 @@ import (
 	"os"
 )
 
-// ContentSectionSize size of content block
-const ContentSectionSize = 256
+// contentSectionSize size of content block
+const contentSectionSize = 256
 
-// BlockSize size of encrypted content block with trailer
-const BlockSize = 284
+// blockSize size of encrypted content block with trailer
+const blockSize = 284
 
 // EncryptFile encrypt file by AES algorithm and returns encrypted file descriptor
 func EncryptFile(_ context.Context, file *os.File, destination string, key [32]byte) (*os.File, error) {
@@ -31,9 +31,9 @@ func EncryptFile(_ context.Context, file *os.File, destination string, key [32]b
 
 	var bf []byte
 	for {
-		bf = make([]byte, ContentSectionSize)
+		bf = make([]byte, contentSectionSize)
 		n, err := file.Read(bf)
-		if n != ContentSectionSize {
+		if n != contentSectionSize {
 			bf = bf[:n]
 		}
 
@@ -78,9 +78,9 @@ func DecryptFile(_ context.Context, file *os.File, destination string, key [32]b
 
 	var bf []byte
 	for {
-		bf = make([]byte, BlockSize)
+		bf = make([]byte, blockSize)
 		n, err := file.Read(bf)
-		if n != BlockSize {
+		if n != blockSize {
 			bf = bf[:n]
 		}
 

@@ -30,8 +30,8 @@ type PlainStorage interface {
 	GetUserSecretByName(ctx context.Context, userUUID string, secretName string, secretType SecretType) (*PlainSecret, error)
 }
 
-var ErrSecretNotFound = errors.New("secret not found")
-var ErrUserNotFound = errors.New("user not found")
+var ErrEntityNotFound = errors.New("entity not found")
+var ErrEntityAlreadyExists = errors.New("entity already exists")
 
 type PlainSecret struct {
 	Metadata SecretMetadata

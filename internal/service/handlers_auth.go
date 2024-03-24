@@ -20,12 +20,7 @@ func (s *Server) Ping(ctx context.Context, request *pb.PingRequest) (*pb.PingRes
 }
 
 func (s *Server) Register(ctx context.Context, request *pb.UserCredentialsRequest) (*pb.UserCredentialsResponse, error) {
-	passwordHash, err := hashPassword(request.Password)
-	if err != nil {
-		s.logger.Error("Cannot hash user password", zap.Error(err), zap.String("login", request.Login))
-
-		return nil, status.Error(codes.Internal, "Cannot hash user password")
-	}
+	passwordHash := hashPassword(request.Password, s.config.Salt)
 	user, err := s.plainStorage.CreateUser(ctx, request.Login, passwordHash)
 	if err != nil && errors.Is(plainstorage.ErrEntityAlreadyExists, err) {
 		s.logger.Info("User try to register existing login", zap.String("login", request.Login))
@@ -61,7 +56,7 @@ func (s *Server) Login(ctx context.Context, request *pb.UserCredentialsRequest) 
 		return nil, status.Error(codes.NotFound, "Account doesn't exists")
 	}
 
-	passwordHash, err := hashPassword(request.Password)
+	passwordHash := hashPassword(request.Password, s.config.Salt)
 	if err != nil {
 		s.logger.Error("Cannot hash user password while login", zap.Error(err), zap.String("login", request.Login))
 

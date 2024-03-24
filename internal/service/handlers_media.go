@@ -78,7 +78,7 @@ func (s *Server) UploadMediaSecret(stream pb.KeeperService_UploadMediaSecretServ
 		}
 
 		completeUpload = func() error {
-			_, err := s.plainStorage.AddSecretMetadata(stream.Context(), user.UUID, metadata.Name, plainstorage.SecretTypeMedia)
+			_, err := s.plainStorage.AddSecretMetadata(stream.Context(), user.UUID, mediaUUID, metadata.Name, plainstorage.SecretTypeMedia)
 			if err != nil {
 				return status.Error(codes.Internal, "Cannot add secret media to plain storage")
 			}

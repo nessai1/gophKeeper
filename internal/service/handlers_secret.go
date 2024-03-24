@@ -71,19 +71,34 @@ func (s *Server) SecretDelete(ctx context.Context, request *pb.SecretDeleteReque
 	}
 
 	if request.GetSecretType() == pb.SecretType_MEDIA {
-		err = s.mediaStorage.Delete(ctx, userSecret.Metadata.UUID)
+		err := s.plainStorage.InTransaction(ctx, func() error {
+			deleteErr := s.mediaStorage.Delete(ctx, userSecret.Metadata.UUID)
+			if deleteErr != nil {
+				s.logger.Error("Error while delete media secret", zap.Error(err), zap.String("login", user.Login), zap.String("secret_name", request.SecretName))
+
+				return errors.New("internal error while remove media secret")
+			}
+
+			deleteErr = s.plainStorage.RemoveSecretByUUID(ctx, userSecret.Metadata.UUID)
+			if err != nil {
+				s.logger.Error("Cannot remove secret from DB", zap.Error(err), zap.String("login", user.Login), zap.String("secret_name", request.SecretName))
+
+				return errors.New("cannot remove secret from DB")
+			}
+
+			return nil
+		})
+
 		if err != nil {
-			s.logger.Error("Error while delete media secret", zap.Error(err), zap.String("login", user.Login), zap.String("secret_name", request.SecretName))
-
-			return nil, status.Error(codes.Internal, "internal error while remove media secret")
+			return nil, status.Error(codes.Internal, err.Error())
 		}
-	}
+	} else {
+		err = s.plainStorage.RemoveSecretByUUID(ctx, userSecret.Metadata.UUID)
+		if err != nil {
+			s.logger.Error("Cannot remove secret from DB", zap.Error(err), zap.String("login", user.Login), zap.String("secret_name", request.SecretName))
 
-	err = s.plainStorage.RemoveSecretByUUID(ctx, userSecret.Metadata.UUID)
-	if err != nil {
-		s.logger.Error("Cannot remove secret from DB", zap.Error(err), zap.String("login", user.Login), zap.String("secret_name", request.SecretName))
-
-		return nil, status.Error(codes.Internal, "cannot remove secret from DB")
+			return nil, status.Error(codes.Internal, "cannot remove secret from DB")
+		}
 	}
 
 	return &pb.SecretDeleteResponse{}, nil

@@ -184,9 +184,8 @@ func (s *PSQLPlainStorage) GetUserSecretsMetadataByType(ctx context.Context, use
 	return secrets, nil
 }
 
-func (s *PSQLPlainStorage) AddSecretMetadata(ctx context.Context, userUUID string, name string, dataType SecretType) (*SecretMetadata, error) {
-	dataUUID := uuid.New().String()
-	_, err := s.db.ExecContext(ctx, "INSERT INTO secret_metadata (uuid, owner_uuid, name, type) VALUES ($1, $2, $3, $4)", dataUUID, userUUID, name, dataType)
+func (s *PSQLPlainStorage) AddSecretMetadata(ctx context.Context, userUUID string, secretUUID, name string, dataType SecretType) (*SecretMetadata, error) {
+	_, err := s.db.ExecContext(ctx, "INSERT INTO secret_metadata (uuid, owner_uuid, name, type) VALUES ($1, $2, $3, $4)", secretUUID, userUUID, name, dataType)
 
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -200,7 +199,7 @@ func (s *PSQLPlainStorage) AddSecretMetadata(ctx context.Context, userUUID strin
 	}
 
 	return &SecretMetadata{
-		UUID:     dataUUID,
+		UUID:     secretUUID,
 		UserUUID: userUUID,
 		Name:     name,
 		Type:     dataType,
@@ -237,7 +236,8 @@ func (s *PSQLPlainStorage) AddPlainSecret(ctx context.Context, userUUID string, 
 		return nil, fmt.Errorf("cannot start create secret transaction: %w", err)
 	}
 
-	md, err := s.AddSecretMetadata(ctx, userUUID, name, dataType)
+	secretUUID := uuid.New().String()
+	md, err := s.AddSecretMetadata(ctx, userUUID, secretUUID, name, dataType)
 	if err != nil {
 		txErr := tx.Rollback()
 		if txErr != nil {

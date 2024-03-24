@@ -75,7 +75,7 @@ func Run() {
 	if c.TLSCredentials != nil {
 		creds, err := buildTLSCredentials(c.TLSCredentials)
 		if err != nil {
-			log.Fatalf("Cannot run secure server: %w", err.Error())
+			log.Fatalf("Cannot run secure server: %s", err.Error())
 		}
 		serverOptions = append(serverOptions, grpc.Creds(creds))
 		log.Println("Server runs on TLS")

@@ -22,8 +22,6 @@ type Config struct {
 	S3Config *S3Config `json:"s3"`
 
 	FileConfigPath string
-
-	SignSecret string
 }
 
 type TLSCredentials struct {

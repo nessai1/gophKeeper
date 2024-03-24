@@ -19,7 +19,7 @@ type PlainStorage interface {
 	InTransaction(ctx context.Context, transaction func() error) error
 
 	GetUserByLogin(ctx context.Context, login string) (*User, error)
-	GetUserByUUID(ctx context.Context, login string) (*User, error)
+	GetUserByUUID(ctx context.Context, uuid string) (*User, error)
 	CreateUser(ctx context.Context, login string, password string) (*User, error)
 	GetUserSecretsMetadataByType(ctx context.Context, userUUID string, secretType SecretType) ([]SecretMetadata, error)
 
@@ -28,7 +28,7 @@ type PlainStorage interface {
 
 	UpdateSecretMetadataUUID(ctx context.Context, userUUID string, oldUUID string, newUUID string, dataType SecretType) error
 
-	UpdatePlainSecretByName(ctx context.Context, ownerUUID string, name string, data []byte) error
+	UpdatePlainSecretDataByName(ctx context.Context, ownerUUID string, name string, dataType SecretType, data []byte) error
 	RemoveSecretByUUID(ctx context.Context, secretUUID string) error
 
 	GetUserSecretByName(ctx context.Context, userUUID string, secretName string, secretType SecretType) (*PlainSecret, error)

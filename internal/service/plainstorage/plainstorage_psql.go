@@ -272,9 +272,9 @@ func (s *PSQLPlainStorage) AddPlainSecret(ctx context.Context, userUUID string, 
 	}, nil
 }
 
-func (s *PSQLPlainStorage) UpdatePlainSecretByName(ctx context.Context, ownerUUID string, name string, data []byte) error {
+func (s *PSQLPlainStorage) UpdatePlainSecretDataByName(ctx context.Context, ownerUUID string, name string, secretType SecretType, data []byte) error {
 	var secretUUID string
-	err := s.db.QueryRowContext(ctx, "SELECT uuid FROM secret_metadata WHERE owner_uuid = $1 AND name = $2", ownerUUID, name).Scan(&secretUUID)
+	err := s.db.QueryRowContext(ctx, "SELECT uuid FROM secret_metadata WHERE owner_uuid = $1 AND name = $2 AND type = $3", ownerUUID, name, secretType).Scan(&secretUUID)
 	if err != nil && errors.Is(sql.ErrNoRows, err) {
 		return ErrEntityNotFound
 	} else if err != nil {

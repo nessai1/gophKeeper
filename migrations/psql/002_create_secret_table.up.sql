@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS secret_metadata (
     type smallint not null,
     created timestamp not null default now(),
     updated timestamp not null default now(),
-    UNIQUE(name, type)
+    UNIQUE(owner_uuid, name, type)
 );
 
 CREATE TABLE IF NOT EXISTS plain_secret (

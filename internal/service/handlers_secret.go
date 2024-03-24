@@ -197,7 +197,7 @@ func (s *Server) SecretUpdate(ctx context.Context, request *pb.SecretUpdateReque
 		return nil, status.Error(codes.InvalidArgument, "cannot get media secret to plain storage")
 	}
 
-	err = s.plainStorage.UpdatePlainSecretByName(ctx, user.UUID, request.GetName(), request.GetContent())
+	err = s.plainStorage.UpdatePlainSecretDataByName(ctx, user.UUID, request.GetName(), secretType, request.GetContent())
 	if err != nil {
 		s.logger.Error("Cannot update plain secret", zap.Error(err), zap.String("login", user.Login))
 

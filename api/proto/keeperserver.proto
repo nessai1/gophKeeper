@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package keeperservice.grpc;
+
+option go_package = "github.com/nessai1/gophkeeper/api/proto";
+
+
+message PingRequest {
+  string message = 1;
+}
+
+message PingResponse {
+  string answer = 1;
+  string error = 2;
+}
+
+message UserCredentialsRequest {
+  string login = 1;
+  string password = 2;
+}
+
+message UserCredentialsResponse {
+  string token = 1;
+  string error = 2;
+}
+
+// Media section
+
+message MediaSecretMetadata {
+  string name = 1;
+  bool overwrite = 2;
+}
+
+message MediaSecret {
+  bytes chunk = 1;
+}
+
+message UploadMediaSecretRequest {
+  oneof request {
+    MediaSecretMetadata metadata = 1;
+    MediaSecret data = 2;
+  }
+}
+
+message UploadMediaSecretResponse {
+  string uuid = 1;
+  string name = 2;
+  string error = 3;
+}
+
+
+message DownloadMediaSecretRequest {
+  string secret_name = 1;
+}
+
+message DownloadMediaSecretResponse {
+  MediaSecret secretPart = 1;
+}
+
+// Common secrets section
+
+enum SecretType {
+  CREDENTIALS = 0;
+  CREDIT_CARD = 1;
+  TEXT = 2;
+  MEDIA = 3;
+}
+
+message Secret {
+  SecretType secret_type = 1;
+  string name = 2;
+  int64 create_timestamp = 3;
+  int64 update_timestamp = 4;
+  bytes content = 5;
+}
+
+message SecretListRequest {
+  SecretType secret_type = 1;
+  string error = 2;
+}
+
+message SecretListResponse {
+  repeated Secret secrets = 1;
+  string error = 2;
+}
+
+message SecretSetRequest {
+  SecretType secret_type = 1;
+  string name = 2;
+  bytes content = 3;
+}
+
+message SecretSetResponse {
+  string error = 1;
+}
+
+message SecretGetRequest {
+  SecretType secret_type = 1;
+  string name = 2;
+}
+
+message SecretGetResponse {
+  Secret secret = 1;
+  string error = 2;
+}
+
+message SecretUpdateRequest {
+  SecretType secret_type = 1;
+  string name = 2;
+  bytes content = 3;
+}
+
+message SecretUpdateResponse {
+  string error = 1;
+}
+
+message SecretDeleteRequest {
+  SecretType secret_type = 1;
+  string secret_name = 2;
+}
+
+message SecretDeleteResponse {
+  string error = 1;
+}
+
+service KeeperService {
+  rpc Ping(PingRequest) returns (PingResponse);
+  rpc Register(UserCredentialsRequest) returns (UserCredentialsResponse);
+  rpc Login(UserCredentialsRequest) returns (UserCredentialsResponse);
+
+  rpc UploadMediaSecret(stream UploadMediaSecretRequest) returns(UploadMediaSecretResponse);
+  rpc DownloadMediaSecret(DownloadMediaSecretRequest) returns(stream DownloadMediaSecretResponse);
+
+  rpc SecretList(SecretListRequest) returns(SecretListResponse);
+  rpc SecretSet(SecretSetRequest) returns(SecretSetResponse);
+  rpc SecretGet(SecretGetRequest) returns(SecretGetResponse);
+  rpc SecretUpdate(SecretUpdateRequest) returns(SecretUpdateResponse);
+  rpc SecretDelete(SecretDeleteRequest) returns(SecretDeleteResponse);
+}
